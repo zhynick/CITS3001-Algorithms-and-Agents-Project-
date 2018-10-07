@@ -15,18 +15,82 @@ import hanabAI.IllegalActionException;
 import hanabAI.State;
 
 public class AgentOne implements Agent {
-	Colour[] colours;
-	private int[] values;
-	Card[] hand; 
-	private boolean firstAction = true;
-	private int numPlayers;
-	ArrayList<Card> seen_cards;
-	HashMap<Integer, Card[]> current_cards; 
-	HashMap<Colour, Stack<Card>> played_pile;
-	Stack<Card> discard_pile; 
-	int index; 
-	int turns_bought; 
+	Colour[] colours; //Known colours of cards in hand
+	int[] values; //Known values of cards in hand
+	boolean firstAction = true; //Is it the first turn of the game?
+    int numPlayers;// Number of players in the game
+	ArrayList<Card> seen_cards; //Cards that have been seen
+	ArrayList<Card> unseen_cards;  //Cards yet to be seen(Not sure how useful this will be yet)
+	ArrayList<Card> current_playable_cards; //Cards that are currently playable given a board state s
+	ArrayList<Card> current_cards_safe_to_discard; //Cards that are currently safe to discard given a board state s(will take into account deck limit)
+	HashMap<Integer, Card[]> current_cards;  //Current hand of each player, mapped to an Int value(aside from your own)
+	HashMap<Colour, Stack<Card>> played_pile; //What cards have been played, sorted by colour 
+	Stack<Card> discard_pile;  //Self explanatory
+	int index; //Int value of the agent
+	int turns_bought;  //How many turns can be bought by giving a hint(not yet implemented)
 	
+	public void update_unseen() //This methods updates cards that have already been seen, removing them from the unseen cards array
+	{
+	  for(Card item : seen_cards)
+	  {
+		  if(unseen_cards.contains(item))
+		  {
+			  unseen_cards.remove(item);
+		  }
+	  }
+		
+	}
+	
+	public int playable(Colour c){ //repurposing Tim French's code 
+	    java.util.Stack<Card> fw = played_pile.get(c);
+	    if (fw.size()==5) return -1;
+	    else return fw.size()+1;
+	  }
+	
+	
+	public void get_safe_playables(ArrayList<Card> playable_safe) //This is much easier. A card is safe to play if playable says so. 
+	{
+		playable_safe.clear(); 
+		for(Colour c : colours_value)
+		{
+			int playable_rank = playable(c);
+			Card playable_card = new Card(c, playable_rank);
+			playable_safe.add(playable_card);
+		}
+		
+		
+	}
+	
+	//You know a card is safe to discard in three scenarios: 
+	//One, someone else has already thrown all the copies of a higher card of the same colour away, and you have a higher copy of that card in your hand. 
+	//Say, someone threw all two red threes away, so all red 4 can now be discarded safely
+	//Two, there is another copy of that card in the deck or a player's hand. 
+	//This can be generalized to if current_cards has that card, or if card is not in seen_cards(meaning that its in the deck), it can be discarded
+	//Three, the relevant card has already been played. So if a red 1 has been played, you know you can discard all red 1s.
+ 	public void get_safe_discards(ArrayList<Card> discard_safe) //This method gets cards that are safe to discard from the current board state
+ 	{
+ 		discard_safe.clear();
+ 		//Colour[] discard_safe_colours = new Colour[deck.length];
+ 		//int[] discard_safe_values = new int[deck.length];
+ 		
+ 		for(Colour c : colours_value)
+ 		{
+ 			int playable_rank = playable(c);
+ 			for(int i = playable_rank -1 ; i >= 0 ; i--)
+ 			{
+ 				Card discard_card = new Card(c, i);
+ 				discard_safe.add(discard_card);
+ 			}
+ 		}
+ 		
+ 		HashMap<Colour, Integer> highest_discarded_value = new HashMap<Colour, Integer>();
+ 		for(Card card : discard_pile)
+ 		{
+ 			
+ 			
+ 		}
+ 		
+	}
 	
 	public void record_hands(State s)
 	{		
@@ -36,9 +100,7 @@ public class AgentOne implements Agent {
 			{
 				System.out.println(m.next().toString());
 			}*/
-			
-			Colour[] colours_value = new Colour[] {Colour.BLUE,Colour.RED,Colour.GREEN,Colour.WHITE,Colour.YELLOW};
- 
+		
 			for(int i = 0 ; i < 5 ; i++)
 			{
 				if(s.getFirework(colours_value[i]) == null)
@@ -50,12 +112,16 @@ public class AgentOne implements Agent {
 			
 			for(int i = 0 ; i < numPlayers; i++)
 			{
-				current_cards.put(i, s.getHand(i));
-				for(Card hand : s.getHand(i))
+				if(index == i)
 				{
-					if(!seen_cards.contains(hand))
+					continue; 
+				}
+				current_cards.put(i, s.getHand(i));
+				for(Card cards : s.getHand(i))
+				{
+					if(!seen_cards.contains(cards))
 					{
-						seen_cards.add(hand);
+						seen_cards.add(cards);
 					}
 				}
 		}
@@ -87,6 +153,7 @@ public class AgentOne implements Agent {
 	public void init(State s)
 	{
 		 seen_cards = new ArrayList<Card>();
+		 unseen_cards = new ArrayList<Card>(Arrays.asList(deck));
 		 current_cards = new HashMap<Integer, Card[]>();
 		 played_pile = new HashMap<Colour, Stack<Card>>();
 		 discard_pile = new Stack<Card>();
@@ -102,7 +169,6 @@ public class AgentOne implements Agent {
 		 	record_hands(s); 
 		 
 		    index = s.getNextPlayer();
-		    hand = s.getHand(index); 
 		    firstAction = false;
 		
 		
@@ -121,7 +187,7 @@ public class AgentOne implements Agent {
 		{
 			getHints(s);
 			record_hands(s);
-			hand = s.getHand(index); 
+			update_unseen();
 			
 			
 		}
@@ -134,5 +200,25 @@ public class AgentOne implements Agent {
 	{
 		return "Sadness";
 	}
+	
+	private static final Colour[] colours_value = new Colour[] {Colour.BLUE,Colour.RED,Colour.GREEN,Colour.WHITE,Colour.YELLOW};
+	
+	private static final Card[] deck = {
+	    new Card(Colour.BLUE,1),new Card(Colour.BLUE,1), new Card(Colour.BLUE,1),
+	    new Card(Colour.BLUE,2),new Card(Colour.BLUE,2),new Card(Colour.BLUE,3),new Card(Colour.BLUE,3),
+	    new Card(Colour.BLUE,4),new Card(Colour.BLUE,4),new Card(Colour.BLUE,5),
+	    new Card(Colour.RED,1),new Card(Colour.RED,1), new Card(Colour.RED,1),
+	    new Card(Colour.RED,2),new Card(Colour.RED,2),new Card(Colour.RED,3),new Card(Colour.RED,3),
+	    new Card(Colour.RED,4),new Card(Colour.RED,4),new Card(Colour.RED,5),
+	    new Card(Colour.GREEN,1),new Card(Colour.GREEN,1), new Card(Colour.GREEN,1),
+	    new Card(Colour.GREEN,2),new Card(Colour.GREEN,2),new Card(Colour.GREEN,3),new Card(Colour.GREEN,3),
+	    new Card(Colour.GREEN,4),new Card(Colour.GREEN,4),new Card(Colour.GREEN,5),
+	    new Card(Colour.WHITE,1),new Card(Colour.WHITE,1), new Card(Colour.WHITE,1),
+	    new Card(Colour.WHITE,2),new Card(Colour.WHITE,2),new Card(Colour.WHITE,3),new Card(Colour.WHITE,3),
+	    new Card(Colour.WHITE,4),new Card(Colour.WHITE,4),new Card(Colour.WHITE,5),
+	    new Card(Colour.YELLOW,1),new Card(Colour.YELLOW,1), new Card(Colour.YELLOW,1),
+	    new Card(Colour.YELLOW,2),new Card(Colour.YELLOW,2),new Card(Colour.YELLOW,3),new Card(Colour.YELLOW,3),
+	    new Card(Colour.YELLOW,4),new Card(Colour.YELLOW,4),new Card(Colour.YELLOW,5)
+	  };
 
 }
