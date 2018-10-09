@@ -2,8 +2,11 @@ package agents;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 
 import hanabAI.Action;
@@ -28,6 +31,8 @@ public class AgentOne implements Agent {
 	Stack<Card> discard_pile;  //Self explanatory
 	int index; //Int value of the agent
 	int turns_bought;  //How many turns can be bought by giving a hint(not yet implemented)
+	float[] playable_chance;	//chance of card in hand being playable
+	float[] discard_chance;  	// chance of card in hand being able to be discarded 
 	
 	public void update_unseen() //This methods updates cards that have already been seen, removing them from the unseen cards array
 	{
@@ -47,7 +52,6 @@ public class AgentOne implements Agent {
 	    else return fw.size()+1;
 	  }
 	
-	
 	public void get_safe_playables(ArrayList<Card> playable_safe) //This is much easier. A card is safe to play if playable says so. 
 	{
 		playable_safe.clear(); 
@@ -61,6 +65,28 @@ public class AgentOne implements Agent {
 		
 	}
 	
+	public void get_count(HashMap<Card, Integer> output , Stack<Card> discard_pile) //get how many of each card is in the disacrd pile 
+	{
+		for(Card item : discard_pile)
+		{
+			for(int i = 0 ; i < deck.length; i++)
+			{
+				if(item.equals(deck[i]))
+				{
+					if(output.get(item) == null)
+					{
+						output.put(item, 1);
+					}
+					
+					else
+					{
+						output.put(item, output.get(item) + 1);
+					}
+				}
+				
+			}
+		}
+	}
 	//You know a card is safe to discard in three scenarios: 
 	//One, someone else has already thrown all the copies of a higher card of the same colour away, and you have a higher copy of that card in your hand. 
 	//Say, someone threw all two red threes away, so all red 4 can now be discarded safely
@@ -73,25 +99,172 @@ public class AgentOne implements Agent {
  		//Colour[] discard_safe_colours = new Colour[deck.length];
  		//int[] discard_safe_values = new int[deck.length];
  		
- 		for(Colour c : colours_value)
+ 		for(Colour c : colours_value) //Step 1, this checks for cards that have already been played
  		{
  			int playable_rank = playable(c);
- 			for(int i = playable_rank -1 ; i >= 0 ; i--)
+ 			for(int i = playable_rank ; i >= 1 ; i--)
  			{
  				Card discard_card = new Card(c, i);
  				discard_safe.add(discard_card);
  			}
  		}
+ 		HashMap<Card, Integer> number_of_cards_discarded = new HashMap<Card, Integer>();
+ 		get_count(number_of_cards_discarded, discard_pile); 
+ 		Iterator<Entry<Card, Integer>> iterate = number_of_cards_discarded.entrySet().iterator(); 
  		
- 		HashMap<Colour, Integer> highest_discarded_value = new HashMap<Colour, Integer>();
- 		for(Card card : discard_pile)
+ 		while(iterate.hasNext()) //Step 2, this checks counts of each discarded card value of each colour and places them into the HashMap 
  		{
- 			
- 			
+ 			Map.Entry colour_value = iterate.next();
+ 			Card current_card = (Card) colour_value.getKey(); 
+ 			Colour colour_type = current_card.getColour();
+ 			int value = current_card.getValue();
+ 			for(int a = 0 ; a < colours_value.length; a++)
+ 			{
+ 				if(colour_type == colours_value[a])
+ 				{
+ 					if(value == 1 && (int) colour_value.getValue() == 3)
+ 	 				{
+ 	 					for(int i = value ; i < 6; i++)
+ 	 					{
+ 	 						discard_safe.add(new Card(colours_value[a], i)); 
+ 	 					}
+ 	 				}
+ 	 			
+ 	 				else if(value >= 2 && value <= 5 && (int) colour_value.getValue() == 2)
+ 	 				{
+ 	 					for(int i = value ; i < 6; i++)
+ 	 					{
+ 	 						discard_safe.add(new Card(colours_value[a], i)); 
+ 	 					}
+ 	 				
+ 	 				}
+ 	 			
+ 	 				else if( value == 5 && (int) colour_value.getValue() == 1)
+ 	 				{
+ 	 					discard_safe.add(new Card(colours_value[a], 5)); 				
+ 	 				}
+ 				}
+ 			}
  		}
  		
-	}
-	
+ 		Iterator<Entry<Integer, Card[]>> iterator_step_3 = current_cards.entrySet().iterator();
+ 		
+ 		while(iterator_step_3.hasNext())  //Step 3, this checks each other player's hand(you can't see your own) and adds them to the safe discard list should there not already be a copy there(2 for one)
+ 		{
+ 			Map.Entry each_player_hand = iterator_step_3.next();
+ 			int current_player = (int) each_player_hand.getKey();
+ 			Card[] player_hand = (Card[]) each_player_hand.getValue(); 
+ 			
+ 			if(current_player == index) //Don't consider what your current cards are, can be reworked later
+ 			{
+ 				continue;
+ 			}
+ 			
+ 			else
+ 			{
+ 				for(int i = 0; i < player_hand.length; i++)
+ 				{
+ 					int card_type_already_present = Collections.frequency(discard_safe , player_hand[i]);
+ 					
+ 					if(player_hand[i].getValue() == 1 && card_type_already_present > 1)
+ 					{
+ 						continue;
+ 					}
+ 					
+ 					else if(player_hand[i].getValue() == 1)
+ 					{
+ 						
+ 						discard_safe.add(new Card(player_hand[i].getColour(), player_hand[i].getValue()));
+ 					}
+ 					
+ 					else if(card_type_already_present == 0)
+ 					{
+ 						discard_safe.add(new Card(player_hand[i].getColour(), player_hand[i].getValue()));
+ 					}
+ 				}
+ 			}
+ 		}
+ 	}
+ 		
+ 	
+ 	public void get_percentages_playable() //Given what we know so far, give each card in the hand a chance of being safe to be played
+ 	{
+ 		Card[] current_known_cards = new Card[colours.length];
+ 		for(int i = 0 ; i < current_known_cards.length ; i++)
+ 		{
+ 			for(int a = 0 ; a < colours.length ; a++)
+ 			{
+ 				current_known_cards[i] = new Card(colours[a], values[a]);				
+ 			}
+ 		}
+ 		
+ 		for(int d = 0 ; d < current_known_cards.length; d++)
+ 		{
+ 			Colour c = current_known_cards[d].getColour();
+ 			int i = current_known_cards[d].getValue();
+ 			
+ 			for(int b = 0 ; b < current_playable_cards.size(); b++)
+ 			{
+ 				if(current_known_cards[d].equals(current_playable_cards.get(b)))
+ 				{
+ 					playable_chance[d] += 1.0;
+ 					break;
+ 				}
+ 				
+ 				if(c == current_playable_cards.get(b).getColour() && c!= null)
+ 				{
+ 					playable_chance[d] += 0.5;
+ 					continue;
+ 				}
+ 				
+ 				if(i == current_playable_cards.get(b).getValue() && i != 0)
+ 				{
+ 				   playable_chance[d] += 0.5;
+ 				}
+ 			}
+ 		}
+ 	}
+ 	
+ 	
+ 	public void get_percentages_discards() //Given what we know far, give each card in hand a chance of being safe to play 
+ 	{
+ 		Card[] current_known_cards = new Card[colours.length];
+ 		for(int i = 0 ; i < current_known_cards.length ; i++)
+ 		{
+ 			for(int a = 0 ; a < colours.length ; a++)
+ 			{
+ 				current_known_cards[i] = new Card(colours[a], values[a]);				
+ 			}
+ 		}
+ 		
+ 		for(int d = 0 ; d < current_known_cards.length; d++) //currently just a copy of the get_percentages_playable, logic can be improved as we go further 
+ 		{
+ 			Colour c = current_known_cards[d].getColour();
+ 			int i = current_known_cards[d].getValue();
+ 			
+ 			for(int b = 0 ; b < current_playable_cards.size(); b++)
+ 			{
+ 				if(current_known_cards[d].equals(current_cards_safe_to_discard.get(b))) 
+ 				{
+ 					playable_chance[d] += 1.0;
+ 					break;
+ 				}
+ 				
+ 				if(c == current_cards_safe_to_discard.get(b).getColour() && c!= null)
+ 				{
+ 					playable_chance[d] += 0.5;
+ 					continue;
+ 				}
+ 				
+ 				if(i == current_cards_safe_to_discard.get(b).getValue() && i != 0)
+ 				{
+ 				   playable_chance[d] += 0.5;
+ 				}
+ 		
+ 		
+ 	}
+ 	
+ 								
 	public void record_hands(State s)
 	{		
 			discard_pile = s.getDiscards();
@@ -148,6 +321,7 @@ public class AgentOne implements Agent {
 		    }
 		    catch(IllegalActionException e){e.printStackTrace();}
 		  }
+	  
 	
 	
 	public void init(State s)
@@ -158,13 +332,20 @@ public class AgentOne implements Agent {
 		 played_pile = new HashMap<Colour, Stack<Card>>();
 		 discard_pile = new Stack<Card>();
 		 numPlayers = s.getPlayers().length;
+		 turns_bought = 0; 
+		 current_playable_cards = new ArrayList<Card>();
+		current_cards_safe_to_discard = new ArrayList<Card>();
 		 if(numPlayers==5){
 			  colours = new Colour[4];
 		      values = new int[4];
+		      playable_chance = new float[4];
+		      discard_chance = new float[4];
 		    }
 		    else{
 		      colours = new Colour[5];
 		      values = new int[5];
+		      playable_chance = new float[5];
+		      discard_chance = new float[5];
 		    }
 		 	record_hands(s); 
 		 

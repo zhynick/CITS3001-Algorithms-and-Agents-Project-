@@ -11,6 +11,7 @@ public class Hanabi{
   private Agent[] players;
   private State state;
   private java.util.Stack<Card> deck;
+  public State test_state; 
 
   /**
    * Initilaises the game.
@@ -31,11 +32,18 @@ public class Hanabi{
    * @return the score for the game
    **/
   public int play(){
+	  int count = 0;
     try{
       while(!state.gameOver()){
         int p = state.getNextPlayer();
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
+        count = count + 1; 
+        if(count == 25)
+        {
+        	test_state = state; 
+        	return 25; 
+        }
       }
       return state.getScore();
     }
@@ -50,12 +58,19 @@ public class Hanabi{
    **/
   public int play(StringBuffer log){
     log.append(state);
+    int count = 0; 
     try{
       while(!state.gameOver()){
         int p = state.getNextPlayer();
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
         log.append(state.toString());
+        count = count + 1; 
+        if(count == 25)
+        {
+        	test_state = state; 
+        	return 25; 
+        }
       }
       return state.getScore();
     }
@@ -63,6 +78,12 @@ public class Hanabi{
       e.printStackTrace();
       return -1;
     }
+  }
+  
+  
+  public State getState()
+  {
+	  return test_state; 
   }
 
   public static String critique(int score){
