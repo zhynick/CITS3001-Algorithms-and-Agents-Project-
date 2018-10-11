@@ -34,6 +34,28 @@ public class AgentOne implements Agent {
 	float[] playable_chance;	//chance of card in hand being playable
 	float[] discard_chance;  	// chance of card in hand being able to be discarded 
 	
+	
+	/*public Card[] convert_hints_to_hand()
+	{
+		Card[] current_known_cards = new Card[colours.length];
+ 		for(int i = 0 ; i < current_known_cards.length ; i++)
+ 		{
+ 					int value = values[i];
+ 					Colour color = colours[i];
+ 					if(value == 0)
+ 					{
+ 						
+ 					}
+ 					current_known_cards[i] = new Card(colours[i], values[i]);
+ 				
+ 		}
+ 		
+ 		return current_known_cards;
+		
+	} */
+	
+	
+	
 	public void update_unseen() //This methods updates cards that have already been seen, removing them from the unseen cards array
 	{
 	  for(Card item : seen_cards)
@@ -67,54 +89,61 @@ public class AgentOne implements Agent {
 	
 	public void get_count(HashMap<Card, Integer> output , Stack<Card> discard_pile) //get how many of each card is in the disacrd pile 
 	{
+		Card c = null; 
+		boolean contains = false; 
 		for(Card item : discard_pile)
-		{
-			for(int i = 0 ; i < deck.length; i++)
+		{	
+			Iterator<Entry<Card, Integer>> i = output.entrySet().iterator();
+			while(i.hasNext())
 			{
-				if(item.equals(deck[i]))
+				Card a = i.next().getKey();
+				if(item.equals(a))
 				{
-					if(output.get(item) == null)
-					{
-						output.put(item, 1);
-					}
-					
-					else
-					{
-						output.put(item, output.get(item) + 1);
-					}
+					c = a;
+					contains= true;
+					break;
 				}
-				
 			}
+			if(!contains)
+			{
+				output.put(item,  1);
+			}
+			
+			else
+			{
+				contains = false;
+				int a = output.get(c);
+				output.replace(c,  a + 1);
+			}	
 		}
+		
 	}
-	//You know a card is safe to discard in three scenarios: 
-	//One, someone else has already thrown all the copies of a higher card of the same colour away, and you have a higher copy of that card in your hand. 
-	//Say, someone threw all two red threes away, so all red 4 can now be discarded safely
-	//Two, there is another copy of that card in the deck or a player's hand. 
-	//This can be generalized to if current_cards has that card, or if card is not in seen_cards(meaning that its in the deck), it can be discarded
-	//Three, the relevant card has already been played. So if a red 1 has been played, you know you can discard all red 1s.
- 	public void get_safe_discards(ArrayList<Card> discard_safe) //This method gets cards that are safe to discard from the current board state
- 	{
- 		discard_safe.clear();
- 		//Colour[] discard_safe_colours = new Colour[deck.length];
- 		//int[] discard_safe_values = new int[deck.length];
- 		
- 		for(Colour c : colours_value) //Step 1, this checks for cards that have already been played
+	
+	
+	public void step1_discard(ArrayList<Card> discard_safe)
+	{
+		for(Colour c : colours_value) //Step 1, this checks for cards that have already been played
  		{
  			int playable_rank = playable(c);
- 			for(int i = playable_rank ; i >= 1 ; i--)
+ 			for(int i = playable_rank-1 ; i >= 1 ; i--)
  			{
  				Card discard_card = new Card(c, i);
  				discard_safe.add(discard_card);
  			}
  		}
- 		HashMap<Card, Integer> number_of_cards_discarded = new HashMap<Card, Integer>();
- 		get_count(number_of_cards_discarded, discard_pile); 
+		
+		
+	}
+	
+	public void step2_discard(ArrayList<Card> discard_safe) //Step 2, this checks counts of each discarded card value of each colour and places them into the HashMap 
+	{
+		HashMap<Card, Integer> number_of_cards_discarded = new HashMap<Card, Integer>();
+ 		get_count(number_of_cards_discarded, discard_pile);
  		Iterator<Entry<Card, Integer>> iterate = number_of_cards_discarded.entrySet().iterator(); 
  		
- 		while(iterate.hasNext()) //Step 2, this checks counts of each discarded card value of each colour and places them into the HashMap 
+ 		while(iterate.hasNext()) 
  		{
- 			Map.Entry colour_value = iterate.next();
+ 			Entry<Card, Integer> colour_value = iterate.next();
  			Card current_card = (Card) colour_value.getKey(); 
  			Colour colour_type = current_card.getColour();
  			int value = current_card.getValue();
@@ -146,12 +175,16 @@ public class AgentOne implements Agent {
  				}
  			}
  		}
- 		
- 		Iterator<Entry<Integer, Card[]>> iterator_step_3 = current_cards.entrySet().iterator();
- 		
+		
+	}
+	
+	
+	public void step3_discard(ArrayList<Card> discard_safe)
+	{
+		Iterator<Entry<Integer, Card[]>> iterator_step_3 = current_cards.entrySet().iterator();
  		while(iterator_step_3.hasNext())  //Step 3, this checks each other player's hand(you can't see your own) and adds them to the safe discard list should there not already be a copy there(2 for one)
  		{
- 			Map.Entry each_player_hand = iterator_step_3.next();
+ 			Entry<Integer, Card[]> each_player_hand = iterator_step_3.next();
  			int current_player = (int) each_player_hand.getKey();
  			Card[] player_hand = (Card[]) each_player_hand.getValue(); 
  			
@@ -184,33 +217,59 @@ public class AgentOne implements Agent {
  				}
  			}
  		}
+	}
+	
+	
+	//You know a card is safe to discard in three scenarios: 
+	//One, someone else has already thrown all the copies of a higher card of the same colour away, and you have a higher copy of that card in your hand. 
+	//Say, someone threw all two red threes away, so all red 4 can now be discarded safely
+	//Two, there is another copy of that card in the deck or a player's hand. 
+	//This can be generalized to if current_cards has that card, or if card is not in seen_cards(meaning that its in the deck), it can be discarded
+	//Three, the relevant card has already been played. So if a red 1 has been played, you know you can discard all red 1s.
+ 	public void get_safe_discards(ArrayList<Card> discard_safe) //This method gets cards that are safe to discard from the current board state
+ 	{
+ 		discard_safe.clear();
+ 		//Colour[] discard_safe_colours = new Colour[deck.length];
+ 		//int[] discard_safe_values = new int[deck.length];
+ 		step1_discard(discard_safe); //Step 1, this checks for cards that have already been played
+ 		step2_discard(discard_safe); //Step 2, this checks counts of each discarded card value of each colour and places them into the HashMap 
+ 		step3_discard(discard_safe);
+ 		
+ 		Iterator<Card> list_iterator = discard_safe.iterator();
+ 		while(list_iterator.hasNext())
+ 		{
+ 			Card c = list_iterator.next();
+ 			if(c.getValue() == 5)
+ 			{
+ 				list_iterator.remove();
+ 			}
+ 		}
  	}
  		
  	
  	public void get_percentages_playable() //Given what we know so far, give each card in the hand a chance of being safe to be played
  	{
- 		Card[] current_known_cards = new Card[colours.length];
- 		for(int i = 0 ; i < current_known_cards.length ; i++)
+ 		Card a = null;
+ 		for(int d = 0 ; d < colours.length; d++)
  		{
- 			for(int a = 0 ; a < colours.length ; a++)
+ 			Colour c = colours[d];
+ 			int i = values[d];
+ 			if(i != 0)
  			{
- 				current_known_cards[i] = new Card(colours[a], values[a]);				
+ 				 a = new Card(c, i);
  			}
- 		}
- 		
- 		for(int d = 0 ; d < current_known_cards.length; d++)
- 		{
- 			Colour c = current_known_cards[d].getColour();
- 			int i = current_known_cards[d].getValue();
  			
  			for(int b = 0 ; b < current_playable_cards.size(); b++)
  			{
- 				if(current_known_cards[d].equals(current_playable_cards.get(b)))
- 				{
- 					playable_chance[d] += 1.0;
- 					break;
- 				}
  				
+ 				if( a != null)
+ 				{
+ 					if(a.equals(current_playable_cards.get(b)))
+ 					{
+ 						playable_chance[d] += 1.0;
+ 						break;
+ 					}
+ 				}
  				if(c == current_playable_cards.get(b).getColour() && c!= null)
  				{
  					playable_chance[d] += 0.5;
@@ -226,42 +285,41 @@ public class AgentOne implements Agent {
  	}
  	
  	
- 	public void get_percentages_discards() //Given what we know far, give each card in hand a chance of being safe to play 
+ 	public void get_percentages_discards() //Given what we know so far, give each card in the hand a chance of being safe to be played
  	{
- 		Card[] current_known_cards = new Card[colours.length];
- 		for(int i = 0 ; i < current_known_cards.length ; i++)
+ 		Card a = null;
+ 		for(int d = 0 ; d < colours.length; d++)
  		{
- 			for(int a = 0 ; a < colours.length ; a++)
+ 			Colour c = colours[d];
+ 			int i = values[d];
+ 			if(i != 0)
  			{
- 				current_known_cards[i] = new Card(colours[a], values[a]);				
+ 				 a = new Card(c, i);
  			}
- 		}
- 		
- 		for(int d = 0 ; d < current_known_cards.length; d++) //currently just a copy of the get_percentages_playable, logic can be improved as we go further 
- 		{
- 			Colour c = current_known_cards[d].getColour();
- 			int i = current_known_cards[d].getValue();
  			
- 			for(int b = 0 ; b < current_playable_cards.size(); b++)
+ 			for(int b = 0 ; b < current_cards_safe_to_discard.size(); b++)
  			{
- 				if(current_known_cards[d].equals(current_cards_safe_to_discard.get(b))) 
- 				{
- 					playable_chance[d] += 1.0;
- 					break;
- 				}
  				
- 				if(c == current_cards_safe_to_discard.get(b).getColour() && c!= null)
+ 				if( a != null)
  				{
- 					playable_chance[d] += 0.5;
+ 					if(a.equals(current_playable_cards.get(b)))
+ 					{
+ 						discard_chance[b] += 1.0;
+ 						break;
+ 					}
+ 				}
+ 				if(c == current_playable_cards.get(b).getColour() && c!= null)
+ 				{
+ 					discard_chance[b] += 0.5;
  					continue;
  				}
  				
- 				if(i == current_cards_safe_to_discard.get(b).getValue() && i != 0)
+ 				if(i == current_playable_cards.get(b).getValue() && i != 0)
  				{
- 				   playable_chance[d] += 0.5;
+ 					discard_chance[b] += 0.5;
  				}
- 		
- 		
+ 			}
+ 		}
  	}
  	
  								
@@ -305,8 +363,10 @@ public class AgentOne implements Agent {
 		      State t = (State) s.clone();
 		      for(int i = 0; i<Math.min(numPlayers-1,s.getOrder());i++){
 		        Action a = t.getPreviousAction();
+		        System.out.println("adad");
 		        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE) && a.getHintReceiver()==index){
 		          boolean[] hints = t.getPreviousAction().getHintedCards();
+		      		
 		          for(int j = 0; j<hints.length; j++){
 		            if(hints[j]){
 		              if(a.getType()==ActionType.HINT_COLOUR) 
@@ -315,7 +375,7 @@ public class AgentOne implements Agent {
 		                values[j] = a.getValue();  
 		            }
 		          }
-		        } 
+		        }
 		        t = t.getPreviousState();
 		      }
 		    }

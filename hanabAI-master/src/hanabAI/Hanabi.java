@@ -39,7 +39,7 @@ public class Hanabi{
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
         count = count + 1; 
-        if(count == 25)
+        if(count == 40)
         {
         	test_state = state; 
         	return 25; 

@@ -16,6 +16,36 @@ import hanabAI.State;
 
 public class tester {
 	
+	
+	public void print(Colour[] s)
+	{
+		String output = "";
+		for(int i = 0 ; i < s.length; i++)
+		{
+			if(s[i] == null)
+			{
+				continue;
+			}
+			output = output + " " +  s[i].toString();
+		}
+		System.out.println(output);
+	}
+	
+	
+	public void print_int(int[] s)
+	{
+		String output = "";
+		for(int i = 0 ; i < s.length; i++)
+		{
+			output = output + " " + Integer.toString(s[i]); 
+		}
+		System.out.println(output);
+	}
+	
+	
+	
+	
+	
 	public static void main(String[] args) throws IllegalActionException
 	{
 		final Colour[] colours_value = new Colour[] {Colour.BLUE,Colour.RED,Colour.GREEN,Colour.WHITE,Colour.YELLOW};
@@ -44,6 +74,10 @@ public class tester {
 		AgentOne new_agent = new AgentOne();
 		new_agent.init(s);
 		new_agent.record_hands(s);
+		new_agent.getHints(s);
+		tester t = new tester();
+		t.print(new_agent.colours);
+		t.print_int(new_agent.values);;
 		Iterator i = s.getDiscards().iterator();
 		/*for(Colour c : colours_value)
 		{
@@ -55,24 +89,13 @@ public class tester {
 			}
 			
 		}*/
-		while(i.hasNext())
-		{
-			Card a = (Card) i.next();
-			System.out.println("Playable Card:" + " " + "Colour:" + a.getColour() + "Value:" + a.getValue()); 
-		}
-		
-		
-		
-		s.getDiscards();
-		
-		
-		
+	
 		ArrayList<Card> test_arraylist = new ArrayList<Card>();
-		new_agent.get_safe_discards(test_arraylist);
-		for(Card c: test_arraylist)
+		new_agent.step2_discard(test_arraylist);
+		/*for(Card c: test_arraylist)
 		{
 			System.out.println("Colour:" + c.getColour().toString() + "Value:" + c.getValue());
-		}
+		} */ 
 		
 	}
 	
