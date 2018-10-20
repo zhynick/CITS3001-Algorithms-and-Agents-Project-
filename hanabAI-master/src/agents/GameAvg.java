@@ -11,16 +11,17 @@ import hanabAI.Hanabi;
 
 public class GameAvg {
 	
-	private static int numberOfGames = 30;
+	private static int numberOfGames = 1000;
 	
 	public static void main(String[] args){
-		Agent[] agents = {new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne()};
+		
 		float acc = 0;
 		int min = 25;
 		int max = 0;
 		int perfects = 0;
 		int zeroes = 0;
 		for (int i = 0; i<numberOfGames; i++) {
+			Agent[] agents = {new agents.BasicAgent(), new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne()};
 			Hanabi H = new Hanabi(agents);
 			int result = H.play(new StringBuffer());
 			if (result > max) max = result;
@@ -29,6 +30,7 @@ public class GameAvg {
 			if (result == 0) zeroes++;
 			//System.out.println(result);
 			acc += result;
+			
 		}
 		System.out.printf("Simulated %s games\n\n", numberOfGames);
 		System.out.printf("  Average result: %f\n", acc / numberOfGames);

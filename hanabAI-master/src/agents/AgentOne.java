@@ -107,7 +107,7 @@ public class AgentOne implements Agent {
  			{
  				int seen = 0;
  				int[] current_playables = new int[colours_value.length];
- 				int[] copies_seen = new int[colours.length];
+ 				int[] copies_seen = new int[colours_value.length];
  				int count = 0;
  				for(Colour item : colours_value)
  				{
