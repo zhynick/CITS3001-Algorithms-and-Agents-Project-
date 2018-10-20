@@ -33,7 +33,6 @@ public class AgentOne implements Agent {
 	HashMap<Integer, List<int[]>> actual_hinted_cards; //Stores what those hints actually are.(Hinted Cards just stores whether they've received a hint). 
 	HashMap<Integer, float[]> playability_of_opponent_cards; //Stores the chances of opponents card to be playable given what hints they know. 
 	HashMap<Integer, HashMap<String, double[]>> opponent_hint_probabilities; //Stores the changed played_probablities
-	HashMap<Integer, HashMap<String, int[]>> what_was_changed; 
 	Stack<Card> discard_pile;  //Self explanatory
 	int index; //Int value of the agent
 	double[] self_playable_chance;	//chance of card in hand being playable
@@ -90,25 +89,26 @@ public class AgentOne implements Agent {
  		for(int d = 0 ; d < colours.length; d++)
  		{
  			double probability = 0;
- 			Colour c = known_colours[d];
- 			int i = known_values[d];
- 			if(c != null & i != 0)
+ 			Colour current_colour = known_colours[d];
+ 			int current_value = known_values[d];
+ 			if(current_colour != null & current_value != 0)
  			{
  				for(Card item : current_playable_cards)
  	 			{
- 	 				if(c == item.getColour() && i == item.getValue())
+ 	 				if(current_colour == item.getColour() && current_value == item.getValue())
  	 				{
  	 					playable_chance[d] += 1.0;
  	 					break;
  	 				}
  	 			}
+ 				break;
  	 		}
  			
- 			else if(c == null && i != 0)
+ 			else if(current_colour == null && current_value != 0)
  			{
  				int seen = 0;
  				int[] current_playables = new int[colours_value.length];
- 				int[] copies_seen = new int[colours_value.length];
+ 				int[] copies_seen = new int[colours.length];
  				int count = 0;
  				for(Colour item : colours_value)
  				{
@@ -125,47 +125,46 @@ public class AgentOne implements Agent {
  				}
  				for(Card a : seen_cards)
  				{
- 					if(a.getValue() == i)
+ 					if(a.getValue() == current_value)
  					{
  						seen+=1;
  					}
  				}
- 				
- 				for(int p = 0 ; p < current_playables.length ; p++)
+ 					
+ 				for(int i = 0 ; i < colours_value.length; i++)
  				{
- 				
- 					if(i == current_playables[p])
+ 					if(current_value == current_playables[d])
  					{
- 						if(i == 1)
+ 						if(current_value == 1)
  						{
- 							probability +=((double) (3-copies_seen[p])/((double)15 - seen));
+ 							probability +=((double) (3-copies_seen[d])/((double)15 - seen));
  						}
  					
  				
- 						else if(i >= 2 & i <=4)
+ 						else if(current_value >= 2 & current_value <=4)
  						{
- 							probability +=((double) (2-copies_seen[p])/((double)10 - seen));
+ 						probability +=((double) (2-copies_seen[d])/((double)10 - seen));
  					
  						}
  				
- 						else if(i == 5)
+ 						else if(current_value == 5)
  						{
- 							probability +=((double) (1)/((double)5 - seen));
+ 						probability +=((double) (1)/((double)5 - seen));
  					
  						}
  					}
  				}
  			}
  			
- 			else if(c != null && i==0)
+ 			else if(current_colour != null && current_value==0)
  			{
  				int seen = 0;
  				int copies_seen = 0;
- 				int playable_number = playable(c); // get the playable rank
+ 				int playable_number = playable(current_colour); // get the playable rank
  				for(Card a : seen_cards) //for each card that's been seen, made up of played_pile + discard_pile + opponent's hands. 
  				{ 
  					
- 					if(a.getColour() == c)
+ 					if(a.getColour() == current_colour)
  					{
  						seen+=1;
  						if(a.getValue() == playable_number)
@@ -225,7 +224,7 @@ public class AgentOne implements Agent {
  					 }
  				 }
  				 
- 				 for(int a = 0; a < 5; a++)
+ 				 for(int a = 0; a < colours.length; a++)
  				 {
  					if(playable_cards[a] == null)
 					 {
@@ -250,13 +249,10 @@ public class AgentOne implements Agent {
  		
 			playable_chance[d] = probability;
  		}
- 	//	tester ld = new tester();
- 		//System.out.println("first");
- 	//	ld.print_double(playable_chance);
  		return playable_chance;
  	}
  	
- 	public int comparison(double[] input_one, double[] input_two, int[] changed_one, int[] changed_two)
+ 	public int comparison(double[] input_one, double[] input_two, boolean[] changed_one, boolean[] changed_two)
  	{
  		double first_sum = 0;
  		double second_sum = 0;
@@ -265,12 +261,12 @@ public class AgentOne implements Agent {
  		
  		for(int i = 0 ; i < input_one.length; i++)
  		{
- 			if(changed_one[i] == 1)
+ 			if(changed_one[i])
  			{
  				first_sum += input_one[i];
  			}
  			
- 			if(changed_two[i] == 1)
+ 			if(changed_two[i])
  			{
  				second_sum += input_two[i];
  			}
@@ -283,7 +279,8 @@ public class AgentOne implements Agent {
  				break;
  			}
  		}
- 		
+ 	//	System.out.println("first_sum:" + first_sum);
+ 	//	System.out.println("second_sum:" + second_sum);
  		if(first_sum >= second_sum) //If the average of the first is higher, return the first array, else return the second. 
  		{
  			return 1;
@@ -415,12 +412,12 @@ public class AgentOne implements Agent {
  					
  					opponent_values[b] = unknown_value;
  					
- 					int[] changed_one = new int[colours.length];
- 					int[] changed_two = new int[colours.length];
+ 					boolean[] changed_one = new boolean[colours.length];
+ 					boolean[] changed_two = new boolean[colours.length];
  					
  					
- 					changed_one[b] = 1;
- 					changed_two[b] = 1;
+ 					changed_one[b] = true;
+ 					changed_two[b] = true;
  					
  					for(int index = 0 ; index < current_state.getHand(i).length; index++)
  					{
@@ -433,7 +430,7 @@ public class AgentOne implements Agent {
  						if(opponent_values[index] == 0 && current_state.getHand(i)[index].getValue() == unknown_value)
  						{
  							opponent_values[index]  = unknown_value; //simulating giving them the hint for that value, change each unknown card in the hand to that value
- 							changed_one[b] = 1;
+ 							changed_one[b] = true;
  						}
  					}
  					double[] input = new double[colours.length];
@@ -454,7 +451,7 @@ public class AgentOne implements Agent {
  						if(opponent_colours[index] == null && current_state.getHand(i)[index].getColour() == unknown_colour)
  						{
  							opponent_colours[index]  = unknown_colour; //simulating giving them the hint for that colour, change each unknown card in the hand to that colour
- 							changed_two[b] = 1;
+ 							changed_two[b] = true;
  						}
  					}
  					double[] input2 = new double[colours.length];
@@ -465,14 +462,13 @@ public class AgentOne implements Agent {
  						//System.out.println("value:" + " " + unknown_value);
  						//ld.print_double(playable_chance_value);
  						hint_probailities.put(Integer.toString(unknown_value), playable_chance_value);
- 						changed_probabilities.put(Integer.toString(unknown_value), changed_one);
- 					
+ 						
  					}
  					
  					else if(result == 2)
  					{
  						hint_probailities.put(unknown_colour.toString(), playable_chance_colour);
- 						changed_probabilities.put(unknown_colour.toString(), changed_two);
+ 						
  						
  					}
  				}
@@ -489,17 +485,6 @@ public class AgentOne implements Agent {
  				opponent_hint_probabilities.remove(i);
  				opponent_hint_probabilities.put(i, hint_probailities);
  			}
- 			
- 			if(what_was_changed.get(i) == null)
- 			{
- 				what_was_changed.put(i,  changed_probabilities);
- 			}
- 			
- 			else
- 			{
- 				what_was_changed.remove(i);
- 				what_was_changed.put(i,  changed_probabilities);
- 			}
  			added_hints.clear();
  		}
  	}
@@ -508,57 +493,67 @@ public class AgentOne implements Agent {
  	public int[] get_highest_hint_probabiltiies()
  	{
  		Iterator<Entry<Integer, HashMap<String, double[]>>> current_iterator = opponent_hint_probabilities.entrySet().iterator();
- 		Iterator<Entry<Integer, HashMap<String, int[]>>> value_iterator = what_was_changed.entrySet().iterator();
  		tester ld = new tester();
- 		/*if(opponent_hint_probabilities.get(1).get("1") != null)
- 		{
- 		double[] test = opponent_hint_probabilities.get(1).get("1");
- 		System.out.println("TEST");
- 		ld.print_double(test);
- 		} */
- 		
  		double[] highest_hint = new double[colours.length];
  		String hint_type = "";
  		int return_id = -1;
- 		boolean first_hint = false;
- 		int count = 0;	
+ 		boolean first_hint = false;	
  		tester a = new tester();
- 		
- 		int[] nothing = new int[colours.length];
- 		
- 	//	System.out.println("first:" + "hint_size" + opponent_hint_probabilities.size());
-	//	System.out.println("first:" + "count_size:" + what_was_changed.size());
- 		
- 		while(current_iterator.hasNext() && value_iterator.hasNext())
+ 		boolean[] nothing = new boolean[colours.length];
+
+ 		while(current_iterator.hasNext())
  		{
  			Entry<Integer, HashMap<String, double[]>> current = current_iterator.next();
- 			Entry<Integer, HashMap<String, int[]>> hints = value_iterator.next();
  			int id = current.getKey();
  			HashMap<String, double[]> current_hint = current.getValue();
- 			HashMap<String, int[]> current_changed = hints.getValue();
  			Iterator<Entry<String, double[]>> hint_iterator = current_hint.entrySet().iterator();
- 			Iterator<Entry<String,int[]>> changed_iterator = current_changed.entrySet().iterator();
  			
- 		//	System.out.println("hint_size" + current_hint.size());
- 		//	System.out.println("count_size:" + current_changed.size());
- 			
- 			while(hint_iterator.hasNext() && changed_iterator.hasNext())
+ 			while(hint_iterator.hasNext())
  			{
+ 				int count = 0;
  				Entry<String, double[]> first_test_hint  = hint_iterator.next();
- 				Entry<String, int[]> first_changed = changed_iterator.next();
+ 				//Entry<String, int[]> first_changed = changed_iterator.next();
  				String hint = first_test_hint.getKey();
  				double[] first = first_test_hint.getValue();
-			//	a.print_double(first);
-			//	a.print_int(first_changed.getValue());
- 				int result = comparison(first, highest_hint, first_changed.getValue(), nothing );
+ 				boolean[] changed = new boolean[colours.length];
+ 				for(Card c : current_state.getHand(id))
+ 				{
+ 					if(c == null)
+ 					{
+ 						continue;
+ 					}
+ 					if(hint.matches("Blue|White|Yellow|Green|Red"))
+ 					{
+ 						if(c.getColour().toString() == hint)
+ 						{
+ 							changed[count] = true;
+ 						}
+ 					}
+ 					
+ 					else
+ 					{
+ 						if(c.getValue() == Integer.parseInt(hint))
+ 						{
+ 							changed[count] = true; 						
+ 						}
+ 						
+ 					}
+ 					count+=1;
+ 				}
+ 				
+ 				
+ 				System.out.println("HINTS" + hint);
+				//a.print_Card(current_state.getHand(id));
+			//	System.out.println("HINT:" + hint);
+ 				int result = comparison(first, highest_hint, changed , nothing );
  				if(result == 1)
  				{
- 					nothing = first_changed.getValue();
+ 					nothing = changed;
  					highest_hint = first.clone();
  					hint_type = hint;
  					return_id = id;
- 			//		System.out.println("highest_hint:" + hint_type);
- 			//		a.print_double(highest_hint);
+ 					//System.out.println("highest_hint:" + hint_type);
+ 					//a.print_double(highest_hint);
  				}
  				
  				else if (result == 2)
@@ -566,10 +561,10 @@ public class AgentOne implements Agent {
  					continue;
  				}
  				
- 				
+ 				count = 0;	
  			}
  		
- 			count = 0;
+ 			
  		}
  		
  			
@@ -618,60 +613,11 @@ public class AgentOne implements Agent {
  			answer[2] = Integer.parseInt(hint_type); 		
  		}
  		
- 			
- 		
- 		
- 		answer[0] = return_id;
- 		
- 		
- 		
+ 			answer[0] = return_id;
  		
  	return answer; 
  	}
- 	
- 	
- 	public void get_percentages_discards() //Given what we know so far, give each card in the hand a chance of being safe to be discarded 
- 	{
- 		float zero = 0;
- 		Discard current_discard = new Discard(discard_pile, index, current_cards_safe_to_discard, current_cards, played_pile);
- 		current_cards_safe_to_discard = current_discard.get_safe_discards();
- 		
- 		for(Card d : current_cards_safe_to_discard)
- 		{
- 			System.out.println(d.toString());
- 			
- 		}
- 		
- 		
- 		
- 		for(int d = 0 ; d < colours.length; d++)
- 		{
- 			Colour c = colours[d];
- 			int i = values[d];
- 			for(Card item : current_cards_safe_to_discard)
- 			{
- 				if(c == item.getColour() && i == item.getValue())
- 	 			{
- 	 				discard_chance[d] += 1.0;
- 	 				break;
- 	 			}
-
- 	 			if(c == item.getColour())
- 	 			{
- 	 				discard_chance[d] += 0.2;
- 	 				continue;
- 	 			}
- 	 				
- 	 			if(i == item.getValue())
- 	 			{
- 	 				discard_chance[d] += 0.2;
- 	 			}
- 				}
- 				
- 			}
- 		}
- 	
- 	
+ 	 	
  								
 	public void record_hands(State s)
 	{
@@ -723,15 +669,7 @@ public class AgentOne implements Agent {
 				
 				else
 				{
-					/*Card[] hand_of_player = current_cards.remove(i);
-					current_cards.put(i, s.getHand(i));
-					for(int p = 0 ; p < hand_of_player.length; p++)
-					{
-						if(!hand_of_player[p].equals(s.getHand(i)[p]))
-						{
-							seen_cards.add(s.getHand(i)[p]);
-						}
-					}*/
+				
 					current_cards.remove(i);
 					current_cards.put(i, s.getHand(i));
 					for(Card c: s.getHand(i))
@@ -746,7 +684,7 @@ public class AgentOne implements Agent {
 			}
 	}
 	
-	  public void getHints(State s){ //hints for own cards 
+	/*  public void getHints(State s){ //hints for own cards 
 		    try{
 		      State t = (State) s.clone();
 		      for(int i = 0; i<Math.min(numPlayers-1,s.getOrder());i++){
@@ -767,7 +705,7 @@ public class AgentOne implements Agent {
 		      }
 		    }
 		    catch(IllegalActionException e){e.printStackTrace();}
-		  }
+		  } */
 	  
 	  
 	  
@@ -796,32 +734,63 @@ public class AgentOne implements Agent {
 		  {
 			  Action a = action_holder.pop();
 			 // System.out.println("WHAT:" + a.toString());
-			  if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE) && a.getHintReceiver() != index)
+			  if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE))
 		        {
 				  int[][] holder = hinted_cards.get(a.getHintReceiver());
 		          boolean[] hints = a.getHintedCards();
-		          for(int j = 0; j<hints.length; j++)
-		          {
-		            if(hints[j])
-		            {
-		              if(a.getType()==ActionType.HINT_COLOUR) 
-		              {
-		            	  holder[j][0] = 1;
-		              }
-		              else
-		            	  holder[j][1] = 1;
+		          
+		          if(a.getHintReceiver() == index)
+		        	{
+		        	  for(int j = 0; j<hints.length; j++)
+		        	  {
+		        		if(hints[j])
+			            {
+			              if(a.getType()==ActionType.HINT_COLOUR) 
+			              {
+			            	  colours[j] = a.getColour();
+			              }
+			              else
+			            	  values[j] = a.getValue();
+			             
+			            }
+		        		
+		        	  }
+		        	}
+		        	
+		        	else
+		        	{
+		        	for(int j = 0; j<hints.length; j++)
+			        {
+		        		if(hints[j])
+		        		{
+		        			if(a.getType()==ActionType.HINT_COLOUR) 
+		        			{
+		        				holder[j][0] = 1;
+		        			}
+		        			else
+		        				holder[j][1] = 1;
 		             
-		            }
+		        		}
+		        	}
 		          }
 		          hinted_cards.replace(a.getHintReceiver(), holder); 
 		        }
-			  else if((a.getType() == ActionType.DISCARD || a.getType() == ActionType.PLAY) && a.getPlayer() != index)
+		         
+			  else if((a.getType() == ActionType.DISCARD || a.getType() == ActionType.PLAY))
 		         {
-		        	 int[][] holder = hinted_cards.get(a.getPlayer());
+		        	 int[][] holder1 = hinted_cards.get(a.getPlayer());
 		        	 int position = a.getCard();
-		        	 holder[position][0] = 0;
-		        	 holder[position][1] = 0;
-		        	 hinted_cards.replace(a.getPlayer(), holder); 
+		        	 if(a.getPlayer() == index)
+		        	 {
+		        		 colours[position] = null;
+		        		 values[position] = 0;
+		        	 }
+		        	 else
+		        	 {
+		        		 holder1[position][0] = 0;
+		        		 holder1[position][1] = 0;
+		        		 hinted_cards.replace(a.getPlayer(), holder1); 
+		        	 }
 		         }
 		        
 		  }
@@ -860,7 +829,6 @@ public class AgentOne implements Agent {
 		 current_cards_safe_to_discard = new ArrayList<Card>();
 		 hinted_cards = new HashMap<Integer, int[][]>();
 		 opponent_hint_probabilities = new HashMap<Integer, HashMap<String, double[]>>();
-		 what_was_changed = new HashMap<Integer, HashMap<String, int[]>>();
 		 seen_cards = new ArrayList<Card>();
 		 hint_tokens = s.getHintTokens();
 		 fuse_tokens = s.getFuseTokens();
@@ -878,7 +846,6 @@ public class AgentOne implements Agent {
 		      discard_chance = new double[5];
 		      age = new int[5];
 		    }
-		 	record_hands(s); 
 		    index = s.getNextPlayer();
 		    firstAction = false;
 		
@@ -897,7 +864,7 @@ public class AgentOne implements Agent {
 				self_index = i; 
 			}
 		}
-		if(value >= (double)0.59 && hint_tokens > 1 && fuse_tokens > 1)
+		if(value >= (double)0.65 && fuse_tokens > 1)
 		{
 			  try {
 				values[self_index] = 0;
@@ -927,7 +894,7 @@ public class AgentOne implements Agent {
 			}
 		}
 		
-		if(value >= (double)1)
+		if(value >= (double)1.0)
 		{
 			  try {
 				values[self_index] = 0;
@@ -1091,12 +1058,12 @@ public class AgentOne implements Agent {
 		
 		
 		 try {
-			 if(hope[1] == 0 && hint_tokens > 3)
+			 if(hope[1] == 0 && hint_tokens > 2)
 			 {
 				return new Action(index, toString(), ActionType.HINT_COLOUR, hope[0], cards, colours_value[hope[2]] );
 			 }
 			 
-			 else if(hope[1] == 1 && hint_tokens > 3 )
+			 else if(hope[1] == 1 && hint_tokens > 2 )
 			 {
 				return new Action(index, toString(), ActionType.HINT_VALUE, hope[0], cards, hope[2]);
 			 }
@@ -1109,27 +1076,7 @@ public class AgentOne implements Agent {
 		 
 			return null;
 		
-	}
-	
-	
-	
-	
-	
-	public Action controller()
-	{
-		double play_chance = 0;
-		double play_safety = 0;
-		
-		
-		
-		
-		
-		
-		
-		
-		
-	}
-	
+	}	
 	
 
 	@Override
@@ -1140,11 +1087,11 @@ public class AgentOne implements Agent {
 			init(s);
 			firstAction = false;
 		}
+			tester ld = new tester();
 			turn_number = s.getOrder();
 			fuse_tokens = s.getFuseTokens();
 			hint_tokens = s.getHintTokens();
 			current_state = s;
-			getHints(s);
 			try
 			{
 				getAll_Hints(s);
@@ -1155,21 +1102,29 @@ public class AgentOne implements Agent {
 			}
 			
 			System.out.println("PLAYER-ID" + index);
-			
+		
 			record_hands(s);
 			get_safe_playables();
-			get_percentages_discards();
-			get_percentages_playable(self_playable_chance, index, colours, values);
+			self_playable_chance = get_percentages_playable(self_playable_chance, index, colours, values);
+			ld.print_double(self_playable_chance);
+			ld.print_colour(colours);
+			ld.print_int(values);
+			
 			update_ally_play_percentages(); 
 			for(int card_ages = 0 ; card_ages < age.length ; card_ages++) //Increment ages of all cards, then set the age of the card that was played/discarded to zero.
 			{
 				age[card_ages]+=1;
 				
-			}
-			Action a = playProbablySafe();
+			}		
+			
+			
+			
+			
+			Action a = playSafe();
+			
 			if(a == null)
 			{
-				a = playSafe();
+				a = playProbablySafe();
 			}
 			
 			if(a == null)
@@ -1180,13 +1135,15 @@ public class AgentOne implements Agent {
 			if(a == null)
 			{
 				a = discardSafe();
+				
 			}
+		
 			
 			if(a == null)
 			{
 				a = discardOldest();
 			}
-		
+			System.out.println(a.toString());
 			return a;
 	}
 	

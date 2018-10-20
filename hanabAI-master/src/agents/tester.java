@@ -55,6 +55,48 @@ public class tester {
 		System.out.println(output);
 	}
 	
+	public void print_colour(Colour[] s)
+	{
+		String output = "";
+		for(int i = 0 ; i < s.length; i++)
+		{
+			if(s[i] == null)
+			{
+				output = output + " " + "Unknown";
+				continue;
+			}
+			output = output + " " + s[i].toString(); 
+		}
+		System.out.println(output);
+	}
+	
+	public void print_Card(Card[] s)
+	{
+		String output = "";
+		for(int i = 0 ; i < s.length; i++)
+		{
+			if(s[i] == null)
+			{
+				output = output + " " + "Unknown";
+				continue;
+			}
+			output = output + " " + s[i].toString(); 
+		}
+		System.out.println(output);
+	}
+	
+	public void print_boolean(boolean[] s)
+	{
+		String output = "";
+		for(int i = 0 ; i < s.length; i++)
+		{
+			
+			output = output + " " + s[i];
+		}
+		System.out.println(output);
+	}
+	
+	
 	public static double average(double[] input)
 	{
 		double item = 0;
@@ -90,7 +132,7 @@ public class tester {
 			System.out.println(m.next().toString());
 		}
 		tester.record_hands(state); */
-		Agent[] tester_agents = new Agent[] {new agents.AgentOne(),new agents.AgentOne(), new agents.AgentOne()}; 
+		Agent[] tester_agents = new Agent[] {new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne()}; 
 		Hanabi test = new Hanabi(tester_agents);
 		StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
 		int result = test.play(log);

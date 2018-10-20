@@ -141,13 +141,12 @@ public class Discard {
  			{
  				for(int i = 0; i < player_hand.length; i++)
  				{
- 					int card_type_already_present = Collections.frequency(discard_safe , player_hand[i]) + Collections.frequency(played_pile.get(player_hand[i].getColour()), player_hand[i]);
- 					
  					if(player_hand[i] == null)
  					{
  						continue;
  					}
- 				
+ 					int card_type_already_present = Collections.frequency(discard_safe , player_hand[i]) + Collections.frequency(played_pile.get(player_hand[i].getColour()), player_hand[i]);
+ 					
  					if(player_hand[i].getValue() != 1 && card_type_already_present > 1)
  					{
  						continue;
