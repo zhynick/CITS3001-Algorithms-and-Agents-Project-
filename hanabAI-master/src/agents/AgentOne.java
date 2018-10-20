@@ -97,14 +97,13 @@ public class AgentOne implements Agent {
  	 			{
  	 				if(current_colour == item.getColour() && current_value == item.getValue())
  	 				{
- 	 					playable_chance[d] += 1.0;
+ 	 					probability += 1.0;
  	 					break;
  	 				}
  	 			}
- 				break;
  	 		}
  			
- 			else if(current_colour == null && current_value != 0)
+ 			else if(current_colour == null && current_value != 0) //if you know the value
  			{
  				int seen = 0;
  				int[] current_playables = new int[colours_value.length];
@@ -133,17 +132,17 @@ public class AgentOne implements Agent {
  					
  				for(int i = 0 ; i < colours_value.length; i++)
  				{
- 					if(current_value == current_playables[d])
+ 					if(current_value == current_playables[i])
  					{
  						if(current_value == 1)
  						{
- 							probability +=((double) (3-copies_seen[d])/((double)15 - seen));
+ 						probability +=((double) (3-copies_seen[i])/((double)15 - seen));
  						}
  					
  				
  						else if(current_value >= 2 & current_value <=4)
  						{
- 						probability +=((double) (2-copies_seen[d])/((double)10 - seen));
+ 						probability +=((double) (2-copies_seen[i])/((double)10 - seen));
  					
  						}
  				
@@ -512,7 +511,6 @@ public class AgentOne implements Agent {
  			{
  				int count = 0;
  				Entry<String, double[]> first_test_hint  = hint_iterator.next();
- 				//Entry<String, int[]> first_changed = changed_iterator.next();
  				String hint = first_test_hint.getKey();
  				double[] first = first_test_hint.getValue();
  				boolean[] changed = new boolean[colours.length];
@@ -568,12 +566,6 @@ public class AgentOne implements Agent {
  		}
  		
  			
- 		/*System.out.println(hint_type);
- 		
- 		for(double a : highest_hint)
- 		{
- 			System.out.println("chance" + a);
- 		}*/
  		if(hint_type == "")
  		{
  			return null;
@@ -683,34 +675,8 @@ public class AgentOne implements Agent {
 				}
 			}
 	}
-	
-	/*  public void getHints(State s){ //hints for own cards 
-		    try{
-		      State t = (State) s.clone();
-		      for(int i = 0; i<Math.min(numPlayers-1,s.getOrder());i++){
-		        Action a = t.getPreviousAction();
-		        if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE) && a.getHintReceiver()==index){
-		          boolean[] hints = t.getPreviousAction().getHintedCards();
-		      	 for(int j = 0; j<hints.length; j++){
-		            if(hints[j]){
-		              if(a.getType()==ActionType.HINT_COLOUR) 
-		                colours[j] = a.getColour();
-		              else
-		                values[j] = a.getValue();  
-		            }
-		          }
-		        }
-		        
-		        t = t.getPreviousState();
-		      }
-		    }
-		    catch(IllegalActionException e){e.printStackTrace();}
-		  } */
-	  
-	  
-	  
-	  
-	  public void getAll_Hints(State s) throws IllegalActionException //testing what other opponents know about their cards 
+
+	   public void getAll_Hints(State s) throws IllegalActionException //testing what other opponents know about their cards 
 	  {
 		  int[][] current_hint;
 		  Stack<Action> action_holder = new Stack<Action>();
@@ -864,7 +830,9 @@ public class AgentOne implements Agent {
 				self_index = i; 
 			}
 		}
-		if(value >= (double)0.65 && fuse_tokens > 1)
+		
+		
+		if(value >= 0.8 && fuse_tokens > 1)
 		{
 			  try {
 				values[self_index] = 0;
@@ -924,7 +892,7 @@ public class AgentOne implements Agent {
 			}
 		}
 		
-		if(value < 0.25 && fuse_tokens > 1)
+		if(value < 0.1 && fuse_tokens > 1)
 		{
 			  try {
 				values[self_index] = 0;

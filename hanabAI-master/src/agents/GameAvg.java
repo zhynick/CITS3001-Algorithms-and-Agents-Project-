@@ -14,7 +14,7 @@ public class GameAvg {
 	private static int numberOfGames = 30;
 	
 	public static void main(String[] args){
-		Agent[] agents = {new AgentOne(),new AgentOne(), new AgentOne()};
+		Agent[] agents = {new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne()};
 		float acc = 0;
 		int min = 25;
 		int max = 0;
