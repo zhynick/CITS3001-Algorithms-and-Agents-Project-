@@ -11,7 +11,7 @@ public class Hanabi{
   private Agent[] players;
   private State state;
   private java.util.Stack<Card> deck;
-  public State test_state; 
+  public State test_state;
 
   /**
    * Initilaises the game.
@@ -32,18 +32,11 @@ public class Hanabi{
    * @return the score for the game
    **/
   public int play(){
-	  int count = 0;
     try{
       while(!state.gameOver()){
         int p = state.getNextPlayer();
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
-        count = count + 1; 
-        if(count == 40)
-        {
-        	test_state = state; 
-        	return 25; 
-        }
       }
       return state.getScore();
     }
@@ -57,20 +50,21 @@ public class Hanabi{
    * @return the score of the game
    **/
   public int play(StringBuffer log){
+	int count = 0;
+	
     log.append(state);
-    int count = 0; 
     try{
       while(!state.gameOver()){
         int p = state.getNextPlayer();
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
         log.append(state.toString());
-        count = count + 1; 
-        if(count == 25)
+        if(count == 20)
         {
-        	test_state = state; 
-        	return 25; 
+        	test_state = state;
+        	return test_state.getScore();
         }
+        count+=1;
       }
       return state.getScore();
     }
@@ -80,13 +74,14 @@ public class Hanabi{
     }
   }
   
-  
   public State getState()
   {
-	  return test_state; 
+	  return test_state;
   }
 
+
   public static String critique(int score){
+    if(score==0) return "Tragic: The pyrotechnicians are obliterated by their own incompetence.\n";
     if(score<6) return "Horrible: boos from the crowd.\n";
     if(score<11) return "Poor: a smattering of applause.\n";
     if(score<16) return "Honourable: but no one will remember it.\n";
@@ -100,7 +95,7 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    Agent[] agents = {new agents.BasicAgent(),new agents.BasicAgent(), new agents.BasicAgent()};
+    Agent[] agents = {new agents.BasicAgent(),new agents.BasicAgent(), new agents.BasicAgent(), new agents.BasicAgent(), new agents.BasicAgent()};
     Hanabi game= new Hanabi(agents);
     StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
     int result = game.play(log);
