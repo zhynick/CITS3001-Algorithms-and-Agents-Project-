@@ -132,21 +132,14 @@ public class tester {
 			System.out.println(m.next().toString());
 		}
 		tester.record_hands(state); */
-		Agent[] tester_agents = new Agent[] {new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne()}; 
+		Agent[] tester_agents = new Agent[] {new agents.AgentTwo(), new agents.BasicAgent(), new agents.BasicAgent()}; 
 		Hanabi test = new Hanabi(tester_agents);
 		StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
 		int result = test.play(log);
 		State s = test.getState();
 		tester a = new tester();
-		AgentTwo tester = new AgentTwo();
-		tester.init(s);
-		tester.doAction(s);
-		Colour[] input_colour = tester.colours;
-		int[] input_value = tester.values;
 		
-		double[] sand = new double [input_colour.length];
-		tester.fillDiscard(sand, tester.index, input_colour, input_value);
-		a.print_double(sand);
+	
 		
 		
 		

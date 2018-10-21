@@ -42,11 +42,11 @@ public class AgentTwo implements Agent {
 	ArrayList<Card> safe_to_discard; //cards that are safe to discard
 	ArrayList<Card> current_playable_cards;  //cards that are safe to play
 	boolean firstAction = true; //is it the first action
-	boolean lastTurn false;
+	boolean lastTurn = false;
 	int deckSize;
 	double playability_certainity; //The overall certainity of playing a card
 	double discard_certainity; // The overall certainity of discarding a card
-	
+	int[] age; //age of each card
 	
 	State current_state; //current_state of the game 
 	
@@ -244,8 +244,6 @@ public class AgentTwo implements Agent {
 	
 	public double[] get_percentages_playable(double[] playable_chance, int player_id, Colour[] input_colour, int[] input_value) //Given what we know so far, give each card in the hand a chance of being safe to be played
  	{
- 		float zero = 0;
- 		Arrays.fill(playable_chance, zero);
  		Colour[] known_colours = new Colour[colours.length];
  		int[] known_values = new int[colours.length];
  		if(player_id == index)
@@ -989,13 +987,15 @@ public class AgentTwo implements Agent {
 		fuse_tokens = s.getFuseTokens();
 		
 		
-		if(numPlayers==5){
+		if(numPlayers > 3){
 		  colours = new Colour[4];	
 	      values = new int[4];
+	      age = new int[4];
 	    }
 	    else{
 	      colours = new Colour[5];
 	      values = new int[5];
+	      age = new int[5];
 	    }
 	    index = s.getNextPlayer();
 	    firstAction = false;
@@ -1060,37 +1060,6 @@ public class AgentTwo implements Agent {
 		}
 	}
 	
-	public Action best_Action()
-	{
-		double hint_token_probability = 0.1*(hint_tokens);
-		double fuse_token_probability = 0.15*(fuse_tokens);
-		
-		
-		double average_playable_chance = average(self_playable_chance);
-		double average_discard_chance = average(self_discard_chance);
-		
-		double[][] opponent_chances = new double[numPlayers][2]; //0 is average playable chance, 1 is average discard chance
-		
-		for(int i = 0 ; i < opponent_chances.length; i++)
-		{
-			
-			if(i == index) //dont need to do this for yourself
-			{
-				continue;
-			}
-			
-			opponent_chances[i][0] = average(opponent_current_played_discard_proabilities.get(i).get(0));
-			opponent_chances[i][1] = average(opponent_current_played_discard_proabilities.get(i).get(1));
-		}
-		
-		double deckSize_left = 0.01 * (double) deckSize;
-		
-		
-		
-		return null;
-		
-	}
-	
 	public Action playProbablySafe() //play an option if it has a percetange above 0(does not do this if there are 2 fuse tokens as one more mistake would cause death) 
 	{
 		double value = 0;
@@ -1110,7 +1079,6 @@ public class AgentTwo implements Agent {
 			  try {
 				values[self_index] = 0;
 				colours[self_index] = null; 
-				age[self_index] = 0;
 				return new Action(index, toString(), ActionType.PLAY, self_index);
 			} catch (IllegalActionException e) {
 				System.out.println("Something has gone wrong");
@@ -1151,6 +1119,43 @@ public class AgentTwo implements Agent {
 		
 	}
 	
+	public Action discardKnown()
+	{	
+		boolean found  = false;
+		int position = -1;
+		for(int i = 0 ; i < colours.length; i++)
+		{
+			
+			for(Card item : safe_to_discard)
+			{
+				if(item.getColour() == colours[i] && item.getValue() == values[i])
+				{
+					position = i;
+					found = true;
+					break;
+				}
+				
+				
+			}
+			
+		}
+		
+		if(found)
+		{
+			 try {
+					values[position] = 0;
+					colours[position] = null; 
+					return new Action(index, toString(), ActionType.DISCARD, position);
+				} catch (IllegalActionException e) {
+					System.out.println("Something has gone wrong");
+					e.printStackTrace();
+				}
+			
+		}
+		return null;
+	}
+	
+	
 	public Action discardSafe() //Discards the least playable card
 	{
 		float value = 0;
@@ -1164,7 +1169,7 @@ public class AgentTwo implements Agent {
 			}
 		}
 		
-		if(value < 0.1 && fuse_tokens > 1)//if that card has less then 0.1 chance of being played, discard it, else return null
+		if(value < 0.1)//if that card has less then 0.1 chance of being played, discard it, else return null
 		{
 			  try {
 				values[self_index] = 0;
@@ -1255,6 +1260,153 @@ public class AgentTwo implements Agent {
 		
 	}	
 	
+	
+	public Action discardOldest() //Discards the oldest card in hand. Only used if there is no info to make a discardSafe() discard. 
+	{
+		java.util.Random rand = new java.util.Random();
+	    int cardIndex = rand.nextInt(colours.length); //Randomly choose a card if the ages of all cards are all 0
+	    int oldest_index = -1; 
+	    int comparison = -1; 
+	    boolean all_zero = true;
+	    
+	    for(int i : age)
+	    {
+	    	if(i != 0)
+	    	{
+	    		all_zero = false;
+	    	}
+	    
+	    }
+	    
+	    try
+	    {
+	    	if(all_zero) //discard a random card since there is no info, may be improved later 
+	    	{
+	    		values[cardIndex] = 0;
+	    		colours[cardIndex] = null;
+	    		age[cardIndex] = 0;
+	    		return new Action(index, toString(), ActionType.DISCARD, cardIndex);
+	    	}
+	    }
+	    
+	    catch (IllegalActionException e) {
+			System.out.println("SOMETHING IS WRONG");
+			e.printStackTrace();
+		}
+	    
+	    
+	    
+	    for(int item = 0 ; item < age.length ; item++)
+	    {
+	    	if(age[item] > comparison)
+	    	{
+	    		comparison = age[item];
+	    		oldest_index = item;
+	    	}
+	    	
+	    }
+	    
+	    
+	    try //discard the card with the highest age 
+	    {
+	    	values[oldest_index] = 0;
+    		colours[oldest_index] = null;
+    		age[oldest_index] = 0;
+    		return new Action(index, toString(), ActionType.DISCARD, oldest_index);
+	    }
+	    
+	    catch (IllegalActionException e) {
+			System.out.println("SOMETHING IS WRONG");
+			e.printStackTrace();
+		}
+	    
+	    return null;
+	}
+	
+	public Action best_Action()
+	{
+		double hint_token_probability = 0.1*(hint_tokens);
+		double fuse_token_probability = 0.15*(fuse_tokens);
+		
+		
+		double average_playable_chance = average(self_playable_chance);
+		double average_discard_chance = average(self_discard_chance);
+		
+		double[][] opponent_chances = new double[numPlayers][2]; //0 is average playable chance, 1 is average discard chance
+		
+		for(int i = 0 ; i < opponent_chances.length; i++)
+		{
+			
+			if(i == index) //dont need to do this for yourself
+			{
+				continue;
+			}
+			
+			opponent_chances[i][0] = average(opponent_current_played_discard_proabilities.get(i).get(0)); //play
+			opponent_chances[i][1] = average(opponent_current_played_discard_proabilities.get(i).get(1)); // discard
+		}
+		
+		double deckSize_left = 0.01 * (double) deckSize;
+		
+		boolean highest = true;
+		double highest_opponent = 0;
+		
+		double highest_discard_chance = 0;
+		for(int b = 0 ; b < numPlayers; b++)
+		{
+			if(average_playable_chance < opponent_chances[b][0])
+			{
+				highest = false;
+				highest_opponent = opponent_chances[b][0];
+			}
+			
+			if(average_discard_chance < opponent_chances[b][1])
+			{
+				highest_discard_chance = opponent_chances[b][1];
+				
+			}
+		}
+		
+		Action a = playSafe();
+		
+		if(highest && fuse_token_probability>=0.3 || a ==null)
+		{
+			a = playProbablySafe();
+			
+		}
+		
+		if(highest_opponent>0.4 || a == null && hint_token_probability > 0.8)
+		{
+			a = discardKnown();
+			
+			if(fuse_token_probability>=0.3 || a ==null)
+			{
+				a = discardSafe();
+				
+				if(average_discard_chance < 0.1 || a ==null)
+				{
+					a = discardOldest();
+				}
+			}
+		}
+		
+	 if(hint_token_probability > 0.2  || a ==null)
+		{
+			a = bestHint();
+			
+		}
+		
+		if(a == null)
+		{
+			System.out.println("ASDAD");
+			a = discardOldest();
+		}
+		
+		return a;
+		
+	}
+	
+	
 	public Action doAction(State s) 
 	{
 		if(firstAction)
@@ -1262,12 +1414,13 @@ public class AgentTwo implements Agent {
 			init(s);
 			firstAction = true;
 		}
+		current_state = s;
 		if(current_state.getOrder() >= current_state.getFinalActionIndex())
 		{
 			lastTurn = true;
 		}
 		
-		current_state = s;
+		
 		hint_tokens = s.getHintTokens();
 		fuse_tokens = s.getFuseTokens();
 		
@@ -1279,15 +1432,22 @@ public class AgentTwo implements Agent {
 		}
 		setCards();
 		deckSize = 50 - seen_cards.size();
-		
+		for(int card_ages = 0 ; card_ages < age.length ; card_ages++) //Increment ages of all cards, then set the age of the card that was played/discarded to zero.
+		{
+			age[card_ages]+=1;
+			
+		}		
 		Discard discard_class = new Discard(discard_pile, fuse_tokens, seen_cards, current_cards , played_pile);
 		safe_to_discard = discard_class.get_safe_discards();
+		self_playable_chance = new double[colours.length];
+		self_discard_chance = new double[colours.length];
 		self_playable_chance = get_percentages_playable(self_playable_chance, index, colours, values);
 		self_discard_chance = fillDiscard(self_discard_chance, index, colours, values);
+		setOpponentProbabilities();
+		Action a = best_Action();
 		
 		
-		
-		return null;
+		return a;
 	}
 
 
