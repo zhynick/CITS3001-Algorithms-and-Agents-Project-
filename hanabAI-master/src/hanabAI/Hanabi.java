@@ -59,12 +59,12 @@ public class Hanabi{
         State localState = state.hideHand(p);
         state = state.nextState(players[p].doAction(localState),deck);
         log.append(state.toString());
-        if(count == 20)
-       {
-        	test_state = state;
-       	return test_state.getScore();
-        }
-        count+=1;
+        //if(count == 20)
+     //  {
+        //	test_state = state;
+     //  	return test_state.getScore();
+   //     }
+    //    count+=1;
       }
       return state.getScore();
     }

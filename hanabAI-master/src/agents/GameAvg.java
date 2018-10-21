@@ -21,7 +21,7 @@ public class GameAvg {
 		int perfects = 0;
 		int zeroes = 0;
 		for (int i = 0; i<numberOfGames; i++) {
-			Agent[] agents = {new agents.AgentOne(), new agents.AgentOne(), new agents.AgentOne()};
+			Agent[] agents = {new agents.AgentTwo(), new agents.AgentTwo(), new agents.AgentTwo()};
 			Hanabi H = new Hanabi(agents);
 			int result = H.play(new StringBuffer());
 			if (result > max) max = result;

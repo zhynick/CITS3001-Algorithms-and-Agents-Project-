@@ -645,13 +645,14 @@ public class AgentTwo implements Agent {
  	public int[] get_highest_hint_probabiltiies()
  	{
  		Iterator<Entry<Integer, HashMap<String, double[]>>> current_iterator = opponent_hint_probabilities.entrySet().iterator();
+ 		tester a = new tester();
  		double[] highest_hint = new double[colours.length];
  		String hint_type = "";
  		int return_id = -1;	
  		boolean[] nothing = new boolean[colours.length];
-
  		while(current_iterator.hasNext()) //Iterate through each player
  		{
+ 			System.out.println("adadad");
  			Entry<Integer, HashMap<String, double[]>> current = current_iterator.next();
  			int id = current.getKey(); //get their id
  			HashMap<String, double[]> current_hint = current.getValue();
@@ -664,6 +665,9 @@ public class AgentTwo implements Agent {
  				String hint = first_test_hint.getKey(); //this is the hint being tested
  				double[] first = first_test_hint.getValue(); //this is how the hint changes the probability chance 
  				boolean[] changed = new boolean[colours.length];
+ 				System.out.println("HINT:" + hint);
+ 				a.print_double(first);
+ 				
  				for(Card c : current_state.getHand(id)) //This gives the array to see which cards were changed by that hint
  				{
  					if(c == null)
@@ -1188,6 +1192,7 @@ public class AgentTwo implements Agent {
 	public Action bestHint() //only hint that will be implemented for now
 	{
 		int[] hope = get_highest_hint_probabiltiies(); //get the int array from highest_hint_probabilities
+		tester a = new tester();
 		boolean[] cards = new boolean[colours.length];	
 		
 		if(hope == null)
@@ -1375,7 +1380,7 @@ public class AgentTwo implements Agent {
 			
 		}
 		
-		if(highest_opponent>0.4 || a == null && hint_token_probability > 0.8)
+		if(highest_opponent>0.4 || a == null && hint_token_probability < 0.8)
 		{
 			a = discardKnown();
 			
@@ -1389,8 +1394,8 @@ public class AgentTwo implements Agent {
 				}
 			}
 		}
-		
-	 if(hint_token_probability > 0.2  || a ==null)
+		System.out.println("probability:" + hint_token_probability);
+		if(hint_token_probability > 0.2  || a ==null)
 		{
 			a = bestHint();
 			
@@ -1398,7 +1403,6 @@ public class AgentTwo implements Agent {
 		
 		if(a == null)
 		{
-			System.out.println("ASDAD");
 			a = discardOldest();
 		}
 		
@@ -1443,6 +1447,7 @@ public class AgentTwo implements Agent {
 		self_discard_chance = new double[colours.length];
 		self_playable_chance = get_percentages_playable(self_playable_chance, index, colours, values);
 		self_discard_chance = fillDiscard(self_discard_chance, index, colours, values);
+		update_ally_play_percentages();
 		setOpponentProbabilities();
 		Action a = best_Action();
 		
