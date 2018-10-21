@@ -14,6 +14,7 @@ public class Discard {
 	Stack<Card> discard_pile;
 	int index;
 	ArrayList<Card> current_cards_safe_to_discard; //Cards that are currently safe to discard given a board state s(will take into account deck limit)
+	ArrayList<Card> second_current_cards_safe_to_discard; 
 	HashMap<Integer, Card[]> current_cards;  //Current hand of each player, mapped to an Int value(aside from your own)
 	HashMap<Colour, Stack<Card>> played_pile; //What cards have been played, sorted by colour
 	
@@ -91,7 +92,7 @@ public class Discard {
  		while(iterate.hasNext()) 
  		{
  			Entry<Card, Integer> colour_value = iterate.next();
- 			Card current_card = (Card) colour_value.getKey(); 
+ 			Card current_card = (Card) colour_value.getKey();  	
  			Colour colour_type = current_card.getColour();
  			int value = current_card.getValue();
  			for(int a = 0 ; a < colours_value.length; a++)
@@ -190,5 +191,17 @@ public class Discard {
  		return current_cards_safe_to_discard;
  	
  	}
+ 	
+ 	
+ 	public ArrayList<Card> get_safe_discards_version2() //This second version for Agent 2 doesn't use step 3
+ 	{
+ 		second_current_cards_safe_to_discard.clear();
+ 		step1_discard(second_current_cards_safe_to_discard);
+ 		step2_discard(second_current_cards_safe_to_discard);
+ 		
+ 		return second_current_cards_safe_to_discard; 
+ 		
+ 	}
+ 	
 
 }
