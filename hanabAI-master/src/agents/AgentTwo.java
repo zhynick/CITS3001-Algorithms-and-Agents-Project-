@@ -152,13 +152,14 @@ public class AgentTwo implements Agent {
 	}
 	
 	
-	public void fillDiscard()
+	public void fillDiscard(double[] discard_chance, int player_id, Colour[] input_colour, int[] input_value)
 	{
-		double[] discard_probability= new double[colours.length]
+		double[] discard_probability= new double[colours.length];
+		
 		for(int a = 0 ; a < colours.length; a++)
 		{
-			int current_value = values[a];
-			Colour current_colour = colours[a];
+			int current_value = input_value[a];
+			Colour current_colour = input_colour[a];
 			double current_probability = 0;
 			
 			
@@ -166,7 +167,7 @@ public class AgentTwo implements Agent {
 			{
 				for(Card c : safe_to_discard)
 				{
-					if(current_value == c.getValue() && current_colour c.getColour())
+					if(current_value == c.getValue() && current_colour ==  c.getColour())
 					{
 						current_probability = 1;
 						break;
@@ -216,13 +217,13 @@ public class AgentTwo implements Agent {
 						switch(i+1) //note that 1 can never be a possibility here
 						{
 						case 1:
-							probability += (double) 3- safe_colour[i]/(double) (10-same_colour_seen);
+							current_probability += (double) 3- safe_colour[i]/(double) (10-same_colour_seen);
 						
 						case 5:
-							probability += (double) 1-safe_colour[i]/(double) (10-same_colour_seen); 
+							current_probability += (double) 1-safe_colour[i]/(double) (10-same_colour_seen); 
 						
 						default:
-							probability += (double) 2-safe_colour[i]/(double) (10-same_colour_seen);
+							current_probability += (double) 2-safe_colour[i]/(double) (10-same_colour_seen);
 						
 						}
 						
@@ -237,7 +238,7 @@ public class AgentTwo implements Agent {
 				int same_value_seen = 0; 
 				int[] safe_colour = new int[5]; 
 				
-				ArrayList<Colour> same_value = new ArrayList<Colour>(); //cards that are the same value as the current card that can be safely discarded
+				ArrayList<Card> same_value = new ArrayList<Card>(); //cards that are the same value as the current card that can be safely discarded
 				HashMap<Card, Integer> card_counter = new HashMap<Card, Integer>(); 
 				
 				for(Card c : safe_to_discard)
@@ -278,7 +279,7 @@ public class AgentTwo implements Agent {
 				}
 				
 				
-				Iterator<Card, Integer> card_counter2 =  card_counter.entrySet().iterator();
+				Iterator<Entry<Card, Integer>> card_counter2 =  card_counter.entrySet().iterator();
 				
 				while(card_counter2.hasNext())
 				{
@@ -289,13 +290,13 @@ public class AgentTwo implements Agent {
 					switch(c.getValue()) //what is the chance of the card in your hand being one of the safe to discard cards(via value)
 					{
 					case 1:
-						probability+= (double)3-count/(double) 15-copies_seen; 		//total 15 1s
+						current_probability+= (double)3-count/(double) 15-copies_seen; 		//total 15 1s
 						
 					case 5:
-						probability+= (double)1-count/(double) 5-copies_seen; 		//total 5 5s
+						current_probability+= (double)1-count/(double) 5-copies_seen; 		//total 5 5s
 						
 					default:
-						proabability+= (double)2-count/(double)10-copies_seen;		//total 10 2s, 3s, 4s
+						current_probability+= (double)2-count/(double)10-copies_seen;		//total 10 2s, 3s, 4s
 					
 					
 					
@@ -321,7 +322,7 @@ public class AgentTwo implements Agent {
 							
 							else
 							{
-								int count = card_counter.get(c);
+								int count = copies_seen.get(c);
 								copies_seen.replace(c, count+1);
 							}
 							
@@ -338,20 +339,21 @@ public class AgentTwo implements Agent {
 					switch(current.getValue())
 					{
 					case 1:
-						probability += (double) 3-number_seen/(double)52-seen_cards.size();
+						current_probability += (double) 3-number_seen/(double)52-seen_cards.size();
 					
 					case 5:
-						probability += (double) 1-number_seen/(double)52 - seen_cards.size();
+						current_probability += (double) 1-number_seen/(double)52 - seen_cards.size();
 						
 					default:
-						probability += (double) 2-number_seen/(double)52- seen_cards.size();
+						current_probability += (double) 2-number_seen/(double)52- seen_cards.size();
 					}
 				}
 					
 			}
 					
-				discard_probability[a] = probability;
+				discard_probability[a] = current_probability;
 		}
+		discard_chance = discard_probability;
 	}
 	 
 	
