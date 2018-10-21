@@ -138,6 +138,18 @@ public class tester {
 		int result = test.play(log);
 		State s = test.getState();
 		
+		AgentTwo tester = new AgentTwo();
+		tester.init(s);
+		tester.doAction(s);
+		Colour[] input_colour = tester.colours;
+		int[] input_value = tester.values;
+		
+		double[] sand = new double [input_colour.length];
+		tester.fillDiscard(sand, tester.index, input_colour, input_value);
+		
+		
+		
+		
 		/*AgentOne one = new AgentOne();
 		one.init(s);
 		one.get_safe_playables();

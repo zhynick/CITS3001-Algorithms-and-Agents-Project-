@@ -676,6 +676,15 @@ public class AgentTwo implements Agent {
 		hint_tokens = s.getHintTokens();
 		fuse_tokens = s.getFuseTokens();
 		
+		try {
+			getAll_Hints(current_state);
+		} catch (IllegalActionException e) {
+			
+			e.printStackTrace();
+		}
+		setCards();
+		
+		
 		Discard discard_class = new Discard(discard_pile, fuse_tokens, seen_cards, current_cards , played_pile);
 		safe_to_discard = discard_class.get_safe_discards();
 		
