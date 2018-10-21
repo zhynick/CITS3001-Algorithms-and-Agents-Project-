@@ -798,7 +798,7 @@ public class AgentOne implements Agent {
 		 seen_cards = new ArrayList<Card>();
 		 hint_tokens = s.getHintTokens();
 		 fuse_tokens = s.getFuseTokens();
-		 if(numPlayers==5){
+		 if(numPlayers > 3){
 			  colours = new Colour[4];
 		      values = new int[4];
 		      self_playable_chance = new double[4];
