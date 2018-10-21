@@ -37,11 +37,26 @@ public class AgentTwo implements Agent {
 	HashMap<Integer, Card[]> current_cards;  //Current hand of each player, mapped to an Int value(aside from your own)
 	Stack<Card> discard_pile;
 	ArrayList<Card> safe_to_discard;
+	ArrayList<Card> current_playable_cards; 
 	boolean firstAction = true; 
 	double playability_certainity; //The overall certainity of playing a card
 	double discard_certainity; // The overall certainity of discarding a card
 	
 	State current_state; //current_state of the game 
+	
+	public double average(double[] input)
+	{
+		double sum = 0.0;
+		
+		for(double a : input)
+		{
+			sum+=a;
+		}
+		
+		sum = sum/input.length;
+		
+		return sum; 
+	}
 
 	
 	public int playable(Colour c){ //repurposing Tim French's code 
@@ -50,6 +65,22 @@ public class AgentTwo implements Agent {
 	    else return fw.size()+1;
 	  }
 	
+	public void get_safe_playables() //This is much easier. A card is safe to play if playable says so. 
+	{
+		current_playable_cards.clear(); 
+		for(Colour c : colours_value)
+		{
+			int playable_rank = playable(c);
+			if(playable_rank == -1)
+			{
+				continue;
+			}
+			Card playable_card = new Card(c, playable_rank);
+			current_playable_cards.add(playable_card);
+		}
+		
+		
+	}
 	
 	 
 	public void init(State s)
@@ -139,7 +170,7 @@ public class AgentTwo implements Agent {
 				
 					current_cards.remove(i);
 					current_cards.put(i, current_state.getHand(i));
-					for(Card c: s.getHand(i))
+					for(Card c: current_state.getHand(i))
 					{
 						if(c == null)
 						{
@@ -151,8 +182,191 @@ public class AgentTwo implements Agent {
 		}
 	}
 	
+	public double[] get_percentages_playable(double[] playable_chance, int player_id, Colour[] input_colour, int[] input_value) //Given what we know so far, give each card in the hand a chance of being safe to be played
+ 	{
+ 		float zero = 0;
+ 		Arrays.fill(playable_chance, zero);
+ 		Colour[] known_colours = new Colour[colours.length];
+ 		int[] known_values = new int[colours.length];
+ 		if(player_id == index)
+ 		{
+ 			known_colours = colours;
+ 			known_values = values;
+ 		}
+ 		else
+ 		{
+ 			known_colours = input_colour;
+ 			known_values = input_value;
+ 		}
+ 		
+ 		for(int d = 0 ; d < colours.length; d++)
+ 		{
+ 			double probability = 0;
+ 			Colour current_colour = known_colours[d];
+ 			int current_value = known_values[d];
+ 			if(current_colour != null & current_value != 0)
+ 			{
+ 				for(Card item : current_playable_cards)
+ 	 			{
+ 	 				if(current_colour == item.getColour() && current_value == item.getValue())
+ 	 				{
+ 	 					probability += 1.0;
+ 	 					break;
+ 	 				}
+ 	 			}
+ 	 		}
+ 			
+ 			else if(current_colour == null && current_value != 0) //if you know the value
+ 			{
+ 				int seen = 0;
+ 				int[] current_playables = new int[colours_value.length];
+ 				int[] copies_seen = new int[colours_value.length];
+ 				int count = 0;
+ 				for(Colour item : colours_value)
+ 				{
+ 					int next_playable = playable(item);
+ 					current_playables[count] = next_playable;
+ 					for(Card a : seen_cards)
+ 	 				{
+ 	 					if(a.getValue() == next_playable && a.getColour() == item)
+ 	 					{
+ 	 						copies_seen[count]+=1;
+ 	 					}
+ 	 				}
+ 					count+=1;
+ 				}
+ 				for(Card a : seen_cards)
+ 				{
+ 					if(a.getValue() == current_value)
+ 					{
+ 						seen+=1;
+ 					}
+ 				}
+ 					
+ 				for(int i = 0 ; i < colours_value.length; i++)
+ 				{
+ 					if(current_value == current_playables[i])
+ 					{
+ 						if(current_value == 1)
+ 						{
+ 						probability +=((double) (3-copies_seen[i])/((double)15 - seen));
+ 						}
+ 					
+ 				
+ 						else if(current_value >= 2 & current_value <=4)
+ 						{
+ 						probability +=((double) (2-copies_seen[i])/((double)10 - seen));
+ 					
+ 						}
+ 				
+ 						else if(current_value == 5)
+ 						{
+ 						probability +=((double) (1)/((double)5 - seen));
+ 					
+ 						}
+ 					}
+ 				}
+ 			}
+ 			
+ 			else if(current_colour != null && current_value==0)
+ 			{
+ 				int seen = 0;
+ 				int copies_seen = 0;
+ 				int playable_number = playable(current_colour); // get the playable rank
+ 				for(Card a : seen_cards) //for each card that's been seen, made up of played_pile + discard_pile + opponent's hands. 
+ 				{ 
+ 					
+ 					if(a.getColour() == current_colour)
+ 					{
+ 						seen+=1;
+ 						if(a.getValue() == playable_number)
+ 						{
+ 							copies_seen+=1;
+ 						}
+ 					}
+ 				}
+ 				switch(playable_number)
+ 				{
+ 				case 1:
+ 					probability = (double)(3-copies_seen)/((double)10-seen);
+ 					break;
+ 				case 5:
+ 					probability = (double)(1)/((double)10-seen);
+ 					break;
+ 				default:
+ 					probability = (double)(2-copies_seen)/((double)10-seen);
+ 					break;
+ 				}
+ 			}
+ 			
+ 			else
+ 			{
+ 				 Card playable_cards[] = new Card[5];
+ 				 int copies_seen[] = new int[5];
+ 				 int count = 0;
+ 				 int unseen = 50 - seen_cards.size();
+ 				 for(Colour item : colours_value)
+ 				 {
+ 					 if(playable(item) == -1)
+ 					 {
+ 						 playable_cards[count] = null;
+ 						 count+=1;
+ 						 continue; 
+ 					 }
+ 					 
+ 					 Card playable_card = new Card(item, playable(item));
+ 					 playable_cards[count] = playable_card;
+ 					
+ 				 }
+ 				 
+ 				 for(int m = 0 ; m < playable_cards.length; m++)
+ 				 {
+ 					 if(playable_cards[m] == null)
+ 					 {
+ 						 continue;
+ 					 }
+ 					 
+ 					 
+ 					 for(Card cards : seen_cards)
+ 					 {
+ 						 if(playable_cards[m].equals(cards))
+ 						 {
+ 							 copies_seen[m]+=1;
+ 						 }
+ 					 }
+ 				 }
+ 				 
+ 				 for(int a = 0; a < colours.length; a++)
+ 				 {
+ 					if(playable_cards[a] == null)
+					 {
+						 continue;
+					 }
+					 
+ 					 
+ 					 switch(playable_cards[a].getValue())
+ 					 {
+ 					 case 1:
+ 						 probability += ((double)(3-copies_seen[a])/((double)(50-seen_cards.size())));
+ 						 break;
+ 					 case 5:
+ 	 					probability += ((double)(1-copies_seen[a])/((double)(50-seen_cards.size())));
+ 	 					break;
+ 	 				 default:
+ 	 					probability += ((double)(2-copies_seen[a])/((double)(50-seen_cards.size())));
+ 	 					break;
+ 	 				 }
+ 				 }
+ 			}
+ 		
+			playable_chance[d] = probability;
+ 		}
+ 		return playable_chance;
+ 	}
 	
-	public void fillDiscard(double[] discard_chance, int player_id, Colour[] input_colour, int[] input_value)
+	
+	
+	public void fillDiscard(double[] discard_chance, int player_id, Colour[] input_colour, int[] input_value) //in this case, input_colour and input_values are what the player knows about their hand
 	{
 		double[] discard_probability= new double[colours.length];
 		
@@ -357,6 +571,9 @@ public class AgentTwo implements Agent {
 	}
 	 
 	
+	
+	
+	
 	public Action doAction(State s) 
 	{
 		if(firstAction)
@@ -369,7 +586,7 @@ public class AgentTwo implements Agent {
 		hint_tokens = s.getHintTokens();
 		fuse_tokens = s.getFuseTokens();
 		
-		Discard discard_class = new Discard(discard_pile, fuse_tokens, seen_cards, null , played_pile);
+		Discard discard_class = new Discard(discard_pile, fuse_tokens, seen_cards, current_cards , played_pile);
 		safe_to_discard = discard_class.get_safe_discards();
 		
 		return null;
