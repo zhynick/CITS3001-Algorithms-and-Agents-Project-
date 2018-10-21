@@ -35,6 +35,7 @@ public class AgentTwo implements Agent {
 	ArrayList<Card> seen_cards; //Similiar to Agent One, stores all cards that've been seen
 	HashMap<Colour, Stack<Card>> played_pile;
 	HashMap<Integer, Card[]> current_cards;  //Current hand of each player, mapped to an Int value(aside from your own)
+	HashMap<Integer, int[][]> hinted_cards;
 	Stack<Card> discard_pile;
 	ArrayList<Card> safe_to_discard;
 	ArrayList<Card> current_playable_cards; 
@@ -92,7 +93,7 @@ public class AgentTwo implements Agent {
 		current_cards = new HashMap<Integer, Card[]>();
 	//  current_playable_cards = new ArrayList<Card>();
 	// current_cards_safe_to_discard = new ArrayList<Card>();
-	// hinted_cards = new HashMap<Integer, int[][]>();
+		hinted_cards = new HashMap<Integer, int[][]>();
 	// opponent_hint_probabilities = new HashMap<Integer, HashMap<String, double[]>>();
 		numPlayers = s.getPlayers().length;
 		seen_cards = new ArrayList<Card>();
@@ -117,6 +118,95 @@ public class AgentTwo implements Agent {
 	
 	}
 	
+
+	   public void getAll_Hints(State s) throws IllegalActionException //testing what other opponents know about their cards 
+	  {
+		  int[][] current_hint;
+		  Stack<Action> action_holder = new Stack<Action>();
+		  State t = (State) s.clone();
+		  for(int b = 0; b<Math.min(numPlayers,s.getOrder());b++) //get actions and push them to the stack.
+		  {
+		      Action a = t.getPreviousAction();
+		      action_holder.push(a);
+		      t = t.getPreviousState();
+		  }
+		  
+		  for(int i = 0 ; i < numPlayers ; i++)
+		  {
+			 if(hinted_cards.get(i) == null && i !=index)
+			 {
+				int[][] new_array = new int[colours.length][2];
+				hinted_cards.put(i, new_array ); 
+			 }
+		  }
+		  while(!action_holder.isEmpty())
+		  {
+			  Action a = action_holder.pop();
+			 // System.out.println("WHAT:" + a.toString());
+			  if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE))
+		        {
+				  int[][] holder = hinted_cards.get(a.getHintReceiver());
+		          boolean[] hints = a.getHintedCards();
+		          
+		          if(a.getHintReceiver() == index)
+		        	{
+		        	  for(int j = 0; j<hints.length; j++)
+		        	  {
+		        		if(hints[j])
+			            {
+			              if(a.getType()==ActionType.HINT_COLOUR) 
+			              {
+			            	  colours[j] = a.getColour();
+			              }
+			              else
+			            	  values[j] = a.getValue();
+			             
+			            }
+		        		
+		        	  }
+		        	}
+		        	
+		        	else
+		        	{
+		        	for(int j = 0; j<hints.length; j++)
+			        {
+		        		if(hints[j])
+		        		{
+		        			if(a.getType()==ActionType.HINT_COLOUR) 
+		        			{
+		        				holder[j][0] = 1;
+		        			}
+		        			else
+		        				holder[j][1] = 1;
+		             
+		        		}
+		        	}
+		          }
+		          hinted_cards.replace(a.getHintReceiver(), holder); 
+		        }
+		         
+			  else if((a.getType() == ActionType.DISCARD || a.getType() == ActionType.PLAY))
+		         {
+		        	 int[][] holder1 = hinted_cards.get(a.getPlayer());
+		        	 int position = a.getCard();
+		        	 if(a.getPlayer() == index)
+		        	 {
+		        		 colours[position] = null;
+		        		 values[position] = 0;
+		        	 }
+		        	 else
+		        	 {
+		        		 holder1[position][0] = 0;
+		        		 holder1[position][1] = 0;
+		        		 hinted_cards.replace(a.getPlayer(), holder1); 
+		        	 }
+		         }
+		        
+		  }
+		  	
+	}
+	  
+	
 	public void setCards() //Set global variables
 	{
 				seen_cards.clear(); 
@@ -137,7 +227,7 @@ public class AgentTwo implements Agent {
 					{
 						continue;
 					}
-					played_pile.put(colours_value[i], s.getFirework(colours_value[i]));
+					played_pile.put(colours_value[i], current_state.getFirework(colours_value[i]));
 					for(Card c : current_state.getFirework(colours_value[i]))
 					{
 						seen_cards.add(c);
