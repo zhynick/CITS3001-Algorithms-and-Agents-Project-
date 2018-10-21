@@ -101,7 +101,7 @@ public class Discard {
  				{
  					if(value == 1 && (int) colour_value.getValue() == 3)
  	 				{
- 	 					for(int i = value ; i < 6; i++)
+ 	 					for(int i = value+1 ; i < 6; i++)
  	 					{
  	 						discard_safe.add(new Card(colours_value[a], i)); 
  	 					}
@@ -109,7 +109,7 @@ public class Discard {
  	 			
  	 				else if(value >= 2 && value < 5 && (int) colour_value.getValue() == 2)
  	 				{
- 	 					for(int i = value ; i < 6; i++)
+ 	 					for(int i = value+1 ; i < 6; i++)
  	 					{
  	 						discard_safe.add(new Card(colours_value[a], i)); 
  	 					}
@@ -130,9 +130,6 @@ public class Discard {
  			int current_player = (int) each_player_hand.getKey();
  			Card[] player_hand = (Card[]) each_player_hand.getValue(); 
  			
- 			
- 			
- 			
  			if(current_player == index) //Don't consider what your current cards are, can be reworked later
  			{
  				continue;
@@ -146,14 +143,14 @@ public class Discard {
  					{
  						continue;
  					}
- 					int card_type_already_present = Collections.frequency(discard_safe , player_hand[i]) + Collections.frequency(played_pile.get(player_hand[i].getColour()), player_hand[i]);
+ 					int card_type_already_present = Collections.frequency(discard_pile , player_hand[i]);
  					
  					if(player_hand[i].getValue() != 1 && card_type_already_present > 1)
  					{
  						continue;
  					}
  					
- 					else if(player_hand[i].getValue() == 1)
+ 					else if(player_hand[i].getValue() == 1 && card_type_already_present < 2)
  					{
  						
  						discard_safe.add(new Card(player_hand[i].getColour(), player_hand[i].getValue()));
@@ -193,7 +190,7 @@ public class Discard {
  	}
  	
  	
- 	public ArrayList<Card> get_safe_discards_version2() //This second version for Agent 2 doesn't use step 3
+ 	/*public ArrayList<Card> get_safe_discards_version2() //This second version for Agent 2 doesn't use step 3
  	{
  		second_current_cards_safe_to_discard.clear();
  		step1_discard(second_current_cards_safe_to_discard);
@@ -201,7 +198,7 @@ public class Discard {
  		
  		return second_current_cards_safe_to_discard; 
  		
- 	}
+ 	}*/
  	
 
 }
