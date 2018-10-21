@@ -137,7 +137,7 @@ public class tester {
 		StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
 		int result = test.play(log);
 		State s = test.getState();
-		
+		tester a = new tester();
 		AgentTwo tester = new AgentTwo();
 		tester.init(s);
 		tester.doAction(s);
@@ -146,7 +146,7 @@ public class tester {
 		
 		double[] sand = new double [input_colour.length];
 		tester.fillDiscard(sand, tester.index, input_colour, input_value);
-		
+		a.print_double(sand);
 		
 		
 		

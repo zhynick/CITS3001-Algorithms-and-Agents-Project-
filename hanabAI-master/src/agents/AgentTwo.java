@@ -459,7 +459,9 @@ public class AgentTwo implements Agent {
 	public void fillDiscard(double[] discard_chance, int player_id, Colour[] input_colour, int[] input_value) //in this case, input_colour and input_values are what the player knows about their hand
 	{
 		double[] discard_probability= new double[colours.length];
-		
+		tester b = new tester();
+		b.print_int(input_value);
+		b.print_colour(input_colour);
 		for(int a = 0 ; a < colours.length; a++)
 		{
 			int current_value = input_value[a];
@@ -521,13 +523,16 @@ public class AgentTwo implements Agent {
 						switch(i+1) //note that 1 can never be a possibility here
 						{
 						case 1:
-							current_probability += (double) 3- safe_colour[i]/(double) (10-same_colour_seen);
+							current_probability += (double) (3- safe_colour[i])/(double) (10-same_colour_seen);
+							break;
 						
 						case 5:
-							current_probability += (double) 1-safe_colour[i]/(double) (10-same_colour_seen); 
+							current_probability += (double) (1-safe_colour[i])/(double) (10-same_colour_seen); 
+							break;
 						
 						default:
-							current_probability += (double) 2-safe_colour[i]/(double) (10-same_colour_seen);
+							current_probability += (double) (2-safe_colour[i])/(double) (10-same_colour_seen);
+							break;
 						
 						}
 						
@@ -594,16 +599,16 @@ public class AgentTwo implements Agent {
 					switch(c.getValue()) //what is the chance of the card in your hand being one of the safe to discard cards(via value)
 					{
 					case 1:
-						current_probability+= (double)3-count/(double) 15-copies_seen; 		//total 15 1s
+						current_probability+= (double)(3-count)/(double) (15-copies_seen); 		//total 15 1s
+						break;
 						
 					case 5:
-						current_probability+= (double)1-count/(double) 5-copies_seen; 		//total 5 5s
+						current_probability+= (double)(1-count)/(double) (5-copies_seen); 		//total 5 5s
+						break;
 						
 					default:
-						current_probability+= (double)2-count/(double)10-copies_seen;		//total 10 2s, 3s, 4s
-					
-					
-					
+						current_probability+= (double)(2-count)/(double)(10-copies_seen);		//total 10 2s, 3s, 4s
+						break;
 					}
 				}
 			}
@@ -643,13 +648,16 @@ public class AgentTwo implements Agent {
 					switch(current.getValue())
 					{
 					case 1:
-						current_probability += (double) 3-number_seen/(double)52-seen_cards.size();
+						current_probability += (double) (3-number_seen)/(double)(52-seen_cards.size());
+						break;
 					
 					case 5:
-						current_probability += (double) 1-number_seen/(double)52 - seen_cards.size();
+						current_probability += (double) (1-number_seen)/(double)(52 - seen_cards.size());
+						break;
 						
 					default:
-						current_probability += (double) 2-number_seen/(double)52- seen_cards.size();
+						current_probability += (double) (2-number_seen)/(double)(52- seen_cards.size());
+						break;
 					}
 				}
 					
@@ -657,6 +665,9 @@ public class AgentTwo implements Agent {
 					
 				discard_probability[a] = current_probability;
 		}
+	
+		b.print_double(discard_probability);
+		
 		discard_chance = discard_probability;
 	}
 	 

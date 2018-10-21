@@ -26,7 +26,7 @@ public class AgentOne implements Agent {
     int numPlayers;// Number of players in the game
 	ArrayList<Card> current_playable_cards; //Cards that are currently playable given a board state s
 	ArrayList<Card> current_cards_safe_to_discard; //Cards that are currently safe to discard given a board state s(will take into account deck limit)
-	ArrayList<Card> seen_cards;
+	ArrayList<Card> seen_cards; //cards that have been seen by the agent, these include the discard pile, played pile and each player's hand 
 	HashMap<Integer, Card[]> current_cards;  //Current hand of each player, mapped to an Int value(aside from your own)
 	HashMap<Colour, Stack<Card>> played_pile; //What cards have been played, sorted by colour
 	HashMap<Integer, int[][]> hinted_cards; //Stores the hints that other players have received. 
@@ -44,13 +44,13 @@ public class AgentOne implements Agent {
 	State current_state; //current state
 	
 	
-	public int playable(Colour c){ //repurposing Tim French's code 
+	public int playable(Colour c){ //repurposing Tim French's code from Basic Agent, get the next playable rank of a colour
 	    java.util.Stack<Card> fw = played_pile.get(c);
 	    if (fw.size()==5) return -1;
 	    else return fw.size()+1;
 	  }
 	
-	public void get_safe_playables() //This is much easier. A card is safe to play if playable says so. 
+	public void get_safe_playables() //This is much easier. A card is safe to play if playable says so, and I add that to current_playable_cards 
 	{
 		current_playable_cards.clear(); 
 		for(Colour c : colours_value)
@@ -72,30 +72,30 @@ public class AgentOne implements Agent {
  	public double[] get_percentages_playable(double[] playable_chance, int player_id, Colour[] input_colour, int[] input_value) //Given what we know so far, give each card in the hand a chance of being safe to be played
  	{
  		float zero = 0;
- 		Arrays.fill(playable_chance, zero);
+ 		Arrays.fill(playable_chance, zero); //reset playable_chance
  		Colour[] known_colours = new Colour[colours.length];
  		int[] known_values = new int[colours.length];
- 		if(player_id == index)
+ 		if(player_id == index) //if calculating for ourself, use colours and values
  		{
  			known_colours = colours;
  			known_values = values;
  		}
- 		else
+ 		else//else just use the inputs provided
  		{
  			known_colours = input_colour;
  			known_values = input_value;
  		}
  		
- 		for(int d = 0 ; d < colours.length; d++)
+ 		for(int d = 0 ; d < colours.length; d++) 
  		{
  			double probability = 0;
- 			Colour current_colour = known_colours[d];
- 			int current_value = known_values[d];
+ 			Colour current_colour = known_colours[d]; 
+ 			int current_value = known_values[d]; //getting what is known about the current card in the hand(colour and value)
  			if(current_colour != null & current_value != 0)
  			{
  				for(Card item : current_playable_cards)
  	 			{
- 	 				if(current_colour == item.getColour() && current_value == item.getValue())
+ 	 				if(current_colour == item.getColour() && current_value == item.getValue()) //if you know both the colour and value, and they are playable then break and put the probability of playing it to 1
  	 				{
  	 					probability += 1.0;
  	 					break;
@@ -109,7 +109,7 @@ public class AgentOne implements Agent {
  				int[] current_playables = new int[colours_value.length];
  				int[] copies_seen = new int[colours_value.length];
  				int count = 0;
- 				for(Colour item : colours_value)
+ 				for(Colour item : colours_value) //get how many copies of that card hae been seen
  				{
  					int next_playable = playable(item);
  					current_playables[count] = next_playable;
@@ -126,13 +126,13 @@ public class AgentOne implements Agent {
  				{
  					if(a.getValue() == current_value)
  					{
- 						seen+=1;
+ 						seen+=1; //get how many copies of that card's value has been seen
  					}
  				}
  					
  				for(int i = 0 ; i < colours_value.length; i++)
  				{
- 					if(current_value == current_playables[i])
+ 					if(current_value == current_playables[i]) //iterate for each possible playable value on each colour
  					{
  						if(current_value == 1)
  						{
@@ -165,14 +165,14 @@ public class AgentOne implements Agent {
  					
  					if(a.getColour() == current_colour)
  					{
- 						seen+=1;
+ 						seen+=1; //how many copies of that card's colour has been seen
  						if(a.getValue() == playable_number)
  						{
- 							copies_seen+=1;
+ 							copies_seen+=1; //how many copies of that card have been seen
  						}
  					}
  				}
- 				switch(playable_number)
+ 				switch(playable_number) //given that colour's next playable rank, how likely is this card going to be that card
  				{
  				case 1:
  					probability = (double)(3-copies_seen)/((double)10-seen);
@@ -191,8 +191,7 @@ public class AgentOne implements Agent {
  				 Card playable_cards[] = new Card[5];
  				 int copies_seen[] = new int[5];
  				 int count = 0;
- 				 int unseen = 50 - seen_cards.size();
- 				 for(Colour item : colours_value)
+ 				 for(Colour item : colours_value) //for each colour, get the next playable rank. 
  				 {
  					 if(playable(item) == -1)
  					 {
@@ -214,7 +213,7 @@ public class AgentOne implements Agent {
  					 }
  					 
  					 
- 					 for(Card cards : seen_cards)
+ 					 for(Card cards : seen_cards) //get how many copies of those playable cards have been seen
  					 {
  						 if(playable_cards[m].equals(cards))
  						 {
@@ -223,7 +222,7 @@ public class AgentOne implements Agent {
  					 }
  				 }
  				 
- 				 for(int a = 0; a < colours.length; a++)
+ 				 for(int a = 0; a < colours_value.length; a++)
  				 {
  					if(playable_cards[a] == null)
 					 {
@@ -231,7 +230,7 @@ public class AgentOne implements Agent {
 					 }
 					 
  					 
- 					 switch(playable_cards[a].getValue())
+ 					 switch(playable_cards[a].getValue()) //given the next playable card's value, and iterating for each colour, give a probability to each card in your hand based on that value
  					 {
  					 case 1:
  						 probability += ((double)(3-copies_seen[a])/((double)(50-seen_cards.size())));
@@ -251,9 +250,10 @@ public class AgentOne implements Agent {
  		return playable_chance;
  	}
  	
+ 	//given two double arrays, and what has been changed in each, get the higher average value of the two 
  	public int comparison(double[] input_one, double[] input_two, boolean[] changed_one, boolean[] changed_two)
  	{
- 		double first_sum = 0;
+ 		double first_sum = 0; 
  		double second_sum = 0;
  		
  		
@@ -278,8 +278,7 @@ public class AgentOne implements Agent {
  				break;
  			}
  		}
- 	//	System.out.println("first_sum:" + first_sum);
- 	//	System.out.println("second_sum:" + second_sum);
+
  		if(first_sum >= second_sum) //If the average of the first is higher, return the first array, else return the second. 
  		{
  			return 1;
@@ -292,24 +291,25 @@ public class AgentOne implements Agent {
  	}
  	
  	
+ 	//Given what you know your opponents know, get how much each possible hint increases their chance of playing a card in their hand 
  	public void update_ally_play_percentages()
- 	{	ArrayList<String> added_hints = new ArrayList<String>();
- 		tester ld = new tester();
- 		for(int i = 0 ; i < numPlayers ; i++)
+ 	{	for(int i = 0 ; i < numPlayers ; i++)
  		{
  			if(i == index)
  			{
  				continue;
  			}
- 			tester c = new tester();
  			
+ 			
+ 			//Hinted Cards is a HashMap that links the player's id to a 2D array, each 2D array reflects what they know about their hand.
+ 			//If Player 1 knows they the first card in their hand is red, hinted cards.get(1) would return a 2D array with array[0][0] being 1, 
+ 			//if they knew the value array[0][1] would be 1, and if they knew both both would be 1
  			Colour[] opponent_colours = new Colour[colours.length];
  			int[] opponent_values = new int[colours.length];
  			int count = 0;
  			int[][] opponent_hints = hinted_cards.get(i);
  			HashMap<String, double[]> hint_probailities = new HashMap<String, double[]>();
- 			HashMap<String, int[]> changed_probabilities = new HashMap<String, int[]>();
- 			for(int card[] : opponent_hints)
+ 			for(int card[] : opponent_hints) //This translates the 2D array into hinted cards into the actual colour/values the opponent knows
  			{
  				if(card[0] == 1 && card[1] == 1)
  				{
@@ -339,9 +339,9 @@ public class AgentOne implements Agent {
  			int[] clone_opponent_values = opponent_values.clone();
  			
  			
- 			for(int b = 0 ; b < current_state.getHand(i).length; b++)
+ 			for(int b = 0 ; b < current_state.getHand(i).length; b++) //iterate over each card in their hand 
  			{
- 				if(current_state.getHand(i)[b] == null)
+ 				if(current_state.getHand(i)[b] == null)//if they don't have a card at the index, skip
 				{
 						continue;
 				}
@@ -353,10 +353,9 @@ public class AgentOne implements Agent {
  				
  				else if(opponent_colours[b] == null && opponent_values[b] != 0) //only the value is known 
  				{
- 					Colour unknown = current_state.getHand(i)[b].getColour();
+ 					Colour unknown = current_state.getHand(i)[b].getColour(); //get the actual colour of that card
  					opponent_colours[b] = unknown;
  					int[] changed = new int[colours.length];
- 					changed[b] = 1;
  					for(int index = 0 ; index < current_state.getHand(i).length; index++)
  					{
  						if(current_state.getHand(i)[index] == null)
@@ -366,15 +365,11 @@ public class AgentOne implements Agent {
  						if(opponent_colours[index] == null && current_state.getHand(i)[index].getColour().equals(unknown))
  						{
  							opponent_colours[index]  = unknown; //simulating giving them the hint for that colour, change each unknown card in the hand to that colour
- 							changed[index] = 1;
  						}
  					}
  					double[] input = new double[colours.length];
- 				//	System.out.println("one" + "colour:" + unknown);
- 					double[] playable_chance = get_percentages_playable(input, i , opponent_colours, opponent_values);
- 					hint_probailities.put(unknown.toString(),playable_chance);
- 					changed_probabilities.put(unknown.toString(), changed);
- 					
+ 					double[] playable_chance = get_percentages_playable(input, i , opponent_colours, opponent_values); //calculate the new playable value based on the hint
+ 					hint_probailities.put(unknown.toString(),playable_chance); //add the changed playable value to a HashMap that links what the hint was to the new playable value
  				}
  				
  				else if(opponent_colours[b] != null && opponent_values[b] == 0 )//if only the colour is known
@@ -382,8 +377,7 @@ public class AgentOne implements Agent {
  					int unknown = current_state.getHand(i)[b].getValue();
  					opponent_values[b] = unknown;
  					int[] changed = new int[colours.length];
- 					changed[b] = 1;
- 					for(int index = 0 ; index < current_state.getHand(i).length; index++)
+ 					for(int index = 0 ; index < current_state.getHand(i).length; index++) //do the same, but try giving them the value instead
  					{
  						if(current_state.getHand(i)[index] == null)
  						{
@@ -392,31 +386,25 @@ public class AgentOne implements Agent {
  						
  						if(opponent_values[index] == 0 && current_state.getHand(i)[index].getValue() == unknown)
  						{
- 							opponent_values[index]  = unknown; //simulating giving them the hint for that colour, change each unknown card in the hand to that colour
- 							changed[index] = 1;
+ 							opponent_values[index]  = unknown; //simulating giving them the hint for that value, change each unknown card in the hand to that value
  						}
  					}
  					double[] input = new double[colours.length];
- 				//	System.out.println("two" + "value:" + unknown);
  					double[] playable_chance = get_percentages_playable(input, i , opponent_colours, opponent_values);
- 					hint_probailities.put(Integer.toString(unknown),playable_chance);
- 					changed_probabilities.put(Integer.toString(unknown), changed);
+ 					hint_probailities.put(Integer.toString(unknown),playable_chance); //add that hinted value and the change playability value to a hashmap 
  				}
  				
+ 				//If they don't know the hint or the colour, only place the hint that gave a higher playable percentage to the hashmap 
  				else //nothing is known 
  				{
  					int unknown_value = current_state.getHand(i)[b].getValue();
  					Colour unknown_colour = current_state.getHand(i)[b].getColour();  
- 					
- 					
  					opponent_values[b] = unknown_value;
- 					
- 					boolean[] changed_one = new boolean[colours.length];
+ 					boolean[] changed_one = new boolean[colours.length]; //as we are using comparison here, we need to note which cards were changed by the new knowledge
  					boolean[] changed_two = new boolean[colours.length];
  					
- 					
  					changed_one[b] = true;
- 					changed_two[b] = true;
+ 					changed_two[b] = true; 
  					
  					for(int index = 0 ; index < current_state.getHand(i).length; index++)
  					{
@@ -433,11 +421,7 @@ public class AgentOne implements Agent {
  						}
  					}
  					double[] input = new double[colours.length];
- 					double[] playable_chance_value = get_percentages_playable(input, i , opponent_colours, opponent_values);
- 					
- 				//	System.out.println("three" + "value:" + unknown_value);
- 				//	ld.print_double(playable_chance_value);
- 					
+ 					double[] playable_chance_value = get_percentages_playable(input, i , opponent_colours, opponent_values); //test value 
  					opponent_values = clone_opponent_values.clone(); //reset the values, now test colour
  					opponent_colours[b] = unknown_colour;
  					for(int index = 0 ; index < current_state.getHand(i).length; index++)
@@ -454,28 +438,26 @@ public class AgentOne implements Agent {
  						}
  					}
  					double[] input2 = new double[colours.length];
- 					double[] playable_chance_colour = get_percentages_playable(input2, i , opponent_colours, opponent_values);
- 					int result = comparison(playable_chance_value, playable_chance_colour, changed_one, changed_two);
- 					if(result == 1)
+ 					double[] playable_chance_colour = get_percentages_playable(input2, i , opponent_colours, opponent_values); //test colour
+ 					int result = comparison(playable_chance_value, playable_chance_colour, changed_one, changed_two); //compare the two
+ 					if(result == 1) //if value gives a higher chance
  					{
- 						//System.out.println("value:" + " " + unknown_value);
- 						//ld.print_double(playable_chance_value);
  						hint_probailities.put(Integer.toString(unknown_value), playable_chance_value);
  						
  					}
  					
- 					else if(result == 2)
+ 					else if(result == 2) //if colour gives a higher chance
  					{
  						hint_probailities.put(unknown_colour.toString(), playable_chance_colour);
  						
  						
  					}
  				}
- 				opponent_colours = clone_opponent_colours.clone();
+ 				opponent_colours = clone_opponent_colours.clone(); //reset colours and values
  				opponent_values = clone_opponent_values.clone();
  		}
  			
- 			if(	opponent_hint_probabilities.get(i) == null)
+ 			if(	opponent_hint_probabilities.get(i) == null) //add all the possible hints for a player into a hashmap that links their id to the hint hashmap 
  			{
  				opponent_hint_probabilities.put(i, hint_probailities);
  			}
@@ -484,37 +466,33 @@ public class AgentOne implements Agent {
  				opponent_hint_probabilities.remove(i);
  				opponent_hint_probabilities.put(i, hint_probailities);
  			}
- 			added_hints.clear();
  		}
  	}
  	
- 	
+ 	//Using the New Hashmap, get the hint that gives the highest chance of playing something. 
  	public int[] get_highest_hint_probabiltiies()
  	{
  		Iterator<Entry<Integer, HashMap<String, double[]>>> current_iterator = opponent_hint_probabilities.entrySet().iterator();
- 		tester ld = new tester();
  		double[] highest_hint = new double[colours.length];
  		String hint_type = "";
- 		int return_id = -1;
- 		boolean first_hint = false;	
- 		tester a = new tester();
+ 		int return_id = -1;	
  		boolean[] nothing = new boolean[colours.length];
 
- 		while(current_iterator.hasNext())
+ 		while(current_iterator.hasNext()) //Iterate through each player
  		{
  			Entry<Integer, HashMap<String, double[]>> current = current_iterator.next();
- 			int id = current.getKey();
+ 			int id = current.getKey(); //get their id
  			HashMap<String, double[]> current_hint = current.getValue();
- 			Iterator<Entry<String, double[]>> hint_iterator = current_hint.entrySet().iterator();
+ 			Iterator<Entry<String, double[]>> hint_iterator = current_hint.entrySet().iterator(); //get their hint hashmap 
  			
- 			while(hint_iterator.hasNext())
+ 			while(hint_iterator.hasNext()) //iterate through each possible hint for that player
  			{
  				int count = 0;
  				Entry<String, double[]> first_test_hint  = hint_iterator.next();
- 				String hint = first_test_hint.getKey();
- 				double[] first = first_test_hint.getValue();
+ 				String hint = first_test_hint.getKey(); //this is the hint being tested
+ 				double[] first = first_test_hint.getValue(); //this is how the hint changes the probability chance 
  				boolean[] changed = new boolean[colours.length];
- 				for(Card c : current_state.getHand(id))
+ 				for(Card c : current_state.getHand(id)) //This gives the array to see which cards were changed by that hint
  				{
  					if(c == null)
  					{
@@ -539,22 +517,16 @@ public class AgentOne implements Agent {
  					count+=1;
  				}
  				
- 				
- 				System.out.println("HINTS" + hint);
-				//a.print_Card(current_state.getHand(id));
-			//	System.out.println("HINT:" + hint);
- 				int result = comparison(first, highest_hint, changed , nothing );
- 				if(result == 1)
+ 				int result = comparison(first, highest_hint, changed , nothing ); //compare the next hint to the current hint
+ 				if(result == 1) //if the next hint is better
  				{
- 					nothing = changed;
- 					highest_hint = first.clone();
- 					hint_type = hint;
- 					return_id = id;
- 					//System.out.println("highest_hint:" + hint_type);
- 					//a.print_double(highest_hint);
+ 					nothing = changed; //set it to the next hint's boolean array
+ 					highest_hint = first.clone(); //set the probabilities to the next hint's changed probabilities
+ 					hint_type = hint; //set the hint to the next hint
+ 					return_id = id; //set the id of the player receiving the hint to the next id
  				}
  				
- 				else if (result == 2)
+ 				else if (result == 2) //keep the current hint if its better
  				{
  					continue;
  				}
@@ -566,13 +538,13 @@ public class AgentOne implements Agent {
  		}
  		
  			
- 		if(hint_type == "")
+ 		if(hint_type == "") //If there is no good hint
  		{
  			return null;
  		}
- 		int[] answer = new int[3];
+ 		int[] answer = new int[3]; //answer[0] gives the id of the player receiving the hint, answer[1] gives the hint type , answer[2] gives what the hint is (red/blue..)
  		int colour_number = -1;
- 		if(hint_type.matches("Blue|Red|Green|White|Yellow"))
+ 		if(hint_type.matches("Blue|Red|Green|White|Yellow")) //if the hint is a colour, set the array
  		{
  			switch(hint_type)
  			{
@@ -607,14 +579,14 @@ public class AgentOne implements Agent {
  		
  			answer[0] = return_id;
  		
- 	return answer; 
+ 	return answer; //return that answer
  	}
  	 	
- 								
+ 	//Sets global variables such as the discard pile, played pile, what cards each player has and what cards have been seen 							
 	public void record_hands(State s)
 	{
-			seen_cards.clear(); 
-			discard_pile = s.getDiscards();
+			seen_cards.clear(); //clear seen cards
+			discard_pile = s.getDiscards(); //get the discard pile
 			
 			Iterator<Card> p = discard_pile.iterator();
 			while(p.hasNext())
@@ -625,7 +597,7 @@ public class AgentOne implements Agent {
 			
 			
 			
-			for(int i = 0 ; i < 5 ; i++)
+			for(int i = 0 ; i < 5 ; i++)//get the played pile
 			{
 				if(s.getFirework(colours_value[i]) == null)
 				{
@@ -638,7 +610,7 @@ public class AgentOne implements Agent {
 				}
 			}
 			
-			for(int i = 0 ; i < numPlayers; i++)
+			for(int i = 0 ; i < numPlayers; i++)//get what card each player has
 			{
 				if(index == i)
 				{
@@ -696,16 +668,15 @@ public class AgentOne implements Agent {
 				hinted_cards.put(i, new_array ); 
 			 }
 		  }
-		  while(!action_holder.isEmpty())
+		  while(!action_holder.isEmpty())//now pop from the stack and then read what each action is 
 		  {
 			  Action a = action_holder.pop();
-			 // System.out.println("WHAT:" + a.toString());
-			  if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE))
+			  if((a.getType()==ActionType.HINT_COLOUR || a.getType() == ActionType.HINT_VALUE))//if its a hint
 		        {
 				  int[][] holder = hinted_cards.get(a.getHintReceiver());
 		          boolean[] hints = a.getHintedCards();
 		          
-		          if(a.getHintReceiver() == index)
+		          if(a.getHintReceiver() == index)//if you received the hint, set your colours/values else
 		        	{
 		        	  for(int j = 0; j<hints.length; j++)
 		        	  {
@@ -724,7 +695,7 @@ public class AgentOne implements Agent {
 		        	}
 		        	
 		        	else
-		        	{
+		        	{ //set it in holder, which is then placed in hinted cards
 		        	for(int j = 0; j<hints.length; j++)
 			        {
 		        		if(hints[j])
@@ -742,7 +713,7 @@ public class AgentOne implements Agent {
 		          hinted_cards.replace(a.getHintReceiver(), holder); 
 		        }
 		         
-			  else if((a.getType() == ActionType.DISCARD || a.getType() == ActionType.PLAY))
+			  else if((a.getType() == ActionType.DISCARD || a.getType() == ActionType.PLAY)) //else if its a Discard/Play
 		         {
 		        	 int[][] holder1 = hinted_cards.get(a.getPlayer());
 		        	 int position = a.getCard();
@@ -752,7 +723,7 @@ public class AgentOne implements Agent {
 		        		 values[position] = 0;
 		        	 }
 		        	 else
-		        	 {
+		        	 { //set holder 
 		        		 holder1[position][0] = 0;
 		        		 holder1[position][1] = 0;
 		        		 hinted_cards.replace(a.getPlayer(), holder1); 
@@ -762,29 +733,8 @@ public class AgentOne implements Agent {
 		  }
 		  	
 	}
-	  
-	  public int[] get_highest_index(int[] input)
-	  {
-		  int[] highest_holdest = new int[2];
-		  int highest_index = 0;
-		  int container = 0;
-		  for(int i = 0 ; i < input.length; i++)
-		  {
-			  if(input[i] > container)
-			  {
-				
-				  container = input[i];
-				  highest_index = i;
-			  }
-		  }
-		  highest_holdest[0] = highest_index;
-		  highest_holdest[1] = container;
-		  return highest_holdest;
-	  }
-			  
-	 
-	  
-	
+	 	  
+	//intialize global variables for first turn of the game
 	public void init(State s)
 	{
 		 current_cards = new HashMap<Integer, Card[]>();
@@ -822,7 +772,7 @@ public class AgentOne implements Agent {
 	{
 		double value = 0;
 		int self_index = 0;
-		for(int i = 0 ;  i < self_playable_chance.length ; i++)
+		for(int i = 0 ;  i < self_playable_chance.length ; i++)//get the card which has the highest play probability 
 		{
 			if(self_playable_chance[i] > value)
 			{
@@ -849,11 +799,11 @@ public class AgentOne implements Agent {
 		
 	}
 	
-	public Action playSafe() //only plays a card if its safe to play 
+	public Action playSafe() //only plays a card if its safe to play, with probability being 100%
 	{
 		double value = 0;
 		int self_index = 0;
-		for(int i = 0 ;  i < self_playable_chance.length ; i++)
+		for(int i = 0 ;  i < self_playable_chance.length ; i++)//get the card which has the highest play probability 
 		{
 			if(value >= self_playable_chance[i])
 			{
@@ -883,7 +833,7 @@ public class AgentOne implements Agent {
 	{
 		float value = 0;
 		int self_index = 0;
-		for(int i = 0 ;  i < self_playable_chance.length ; i++)
+		for(int i = 0 ;  i < self_playable_chance.length ; i++)//inverse of play safe, discard the card that has the least chance of being played
 		{
 			if(self_playable_chance[i] < value)
 			{
@@ -892,7 +842,7 @@ public class AgentOne implements Agent {
 			}
 		}
 		
-		if(value < 0.1 && fuse_tokens > 1)
+		if(value < 0.1 && fuse_tokens > 1)//if that card has less then 0.1 chance of being played, discard it, else return null
 		{
 			  try {
 				values[self_index] = 0;
@@ -973,7 +923,7 @@ public class AgentOne implements Agent {
 	
 	public Action bestHint() //only hint that will be implemented for now
 	{
-		int[] hope = get_highest_hint_probabiltiies();
+		int[] hope = get_highest_hint_probabiltiies(); //get the int array from highest_hint_probabilities
 		boolean[] cards = new boolean[colours.length];	
 		
 		if(hope == null)
@@ -986,9 +936,9 @@ public class AgentOne implements Agent {
 			return null;
 		}
 		
-		if(hope[1] == 0)
+		if(hope[1] == 0) //if hint is a colour
 		{
-			Card[] current_cards_of_opponent = 	current_cards.get(hope[0]); 
+			Card[] current_cards_of_opponent = 	current_cards.get(hope[0]);  //set the boolean array
 				
 				for(int p = 0 ; p < colours.length ; p++)
 				{
@@ -1007,9 +957,9 @@ public class AgentOne implements Agent {
 				
 		}
 		
-		else if(hope[1] == 1)
+		else if(hope[1] == 1) //if hint is a number
 		{
-			Card[] current_cards_of_opponent = 	current_cards.get(hope[0]); 
+			Card[] current_cards_of_opponent = 	current_cards.get(hope[0]);  //set the boolean array
 			for(int p = 0 ; p < cards.length ; p++)
 				{
 					if(current_cards_of_opponent[p] == null)
@@ -1025,7 +975,7 @@ public class AgentOne implements Agent {
 		}
 		
 		
-		 try {
+		 try { //give the hint
 			 if(hope[1] == 0 && hint_tokens > 2)
 			 {
 				return new Action(index, toString(), ActionType.HINT_COLOUR, hope[0], cards, colours_value[hope[2]] );
@@ -1055,7 +1005,6 @@ public class AgentOne implements Agent {
 			init(s);
 			firstAction = false;
 		}
-			tester ld = new tester();
 			turn_number = s.getOrder();
 			fuse_tokens = s.getFuseTokens();
 			hint_tokens = s.getHintTokens();
@@ -1068,25 +1017,15 @@ public class AgentOne implements Agent {
 			{
 				System.out.println("Something is Wrong");
 			}
-			
-			System.out.println("PLAYER-ID" + index);
-		
 			record_hands(s);
 			get_safe_playables();
 			self_playable_chance = get_percentages_playable(self_playable_chance, index, colours, values);
-			ld.print_double(self_playable_chance);
-			ld.print_colour(colours);
-			ld.print_int(values);
-			
 			update_ally_play_percentages(); 
 			for(int card_ages = 0 ; card_ages < age.length ; card_ages++) //Increment ages of all cards, then set the age of the card that was played/discarded to zero.
 			{
 				age[card_ages]+=1;
 				
 			}		
-			
-			
-			
 			
 			Action a = playSafe();
 			
@@ -1111,7 +1050,6 @@ public class AgentOne implements Agent {
 			{
 				a = discardOldest();
 			}
-			System.out.println(a.toString());
 			return a;
 	}
 	
